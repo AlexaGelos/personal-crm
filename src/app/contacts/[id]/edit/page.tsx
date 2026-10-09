@@ -1,0 +1,76 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { updateContact } from "@/app/actions";
+import { BackLink } from "@/components/back-link";
+import { ContactForm } from "@/components/contact-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getContact } from "@/lib/data";
+import { parseContactId } from "@/lib/validation";
+
+export const metadata: Metadata = {
+  title: "Изменить контакт",
+};
+
+export default function EditContactPage({ params }: PageProps<"/contacts/[id]/edit">) {
+  return (
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
+      <Suspense fallback={<EditSkeleton />}>
+        <EditContact params={params} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function EditContact({
+  params,
+}: {
+  params: PageProps<"/contacts/[id]/edit">["params"];
+}) {
+  const id = parseContactId((await params).id);
+  if (id === null) notFound();
+
+  const contact = await getContact(id);
+  if (!contact) notFound();
+
+  const cardHref = `/contacts/${contact.id}`;
+
+  return (
+    <>
+      <BackLink href={cardHref}>К карточке</BackLink>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <h1 className="text-xl font-semibold">Изменить контакт</h1>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContactForm
+            action={updateContact.bind(null, contact.id)}
+            defaults={{
+              name: contact.name,
+              about: contact.about ?? "",
+              howWeMet: contact.howWeMet ?? "",
+              phone: contact.phone ?? "",
+              email: contact.email ?? "",
+            }}
+            submitLabel="Сохранить"
+            cancelHref={cardHref}
+          />
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+function EditSkeleton() {
+  return (
+    <div className="flex flex-col gap-4 rounded-xl border bg-background p-4" aria-busy="true">
+      <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+      {Array.from({ length: 4 }, (_, i) => (
+        <div key={i} className="h-9 animate-pulse rounded bg-muted" />
+      ))}
+    </div>
+  );
+}
