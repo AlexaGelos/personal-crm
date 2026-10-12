@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar } from "@/components/avatar";
 import { ShowMoreButton } from "@/components/show-more-button";
 import { countContacts, listContacts } from "@/lib/data";
 import { formatNumber, pluralize } from "@/lib/format";
@@ -77,27 +78,30 @@ export async function ContactList({
           hint="Проверьте написание или поищите по части имени, телефона или почты."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-background">
+        <div className="overflow-hidden rounded-card border bg-card">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="pl-4">Имя</TableHead>
+                <TableHead className="pl-5">Имя</TableHead>
                 <TableHead className="hidden md:table-cell">Кто это</TableHead>
                 <TableHead className="hidden sm:table-cell">Телефон</TableHead>
-                <TableHead className="hidden pr-4 lg:table-cell">Почта</TableHead>
+                <TableHead className="hidden pr-5 lg:table-cell">Почта</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((contact) => (
                 // The name link stretches over the whole row, so any cell opens the card
                 <TableRow key={contact.id} className="relative">
-                  <TableCell className="py-2.5 pl-4 font-medium">
-                    <Link
-                      href={`/contacts/${contact.id}`}
-                      className="outline-none after:absolute after:inset-0 focus-visible:underline"
-                    >
-                      {contact.name}
-                    </Link>
+                  <TableCell className="py-2.5 pl-5 font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={contact.name} />
+                      <Link
+                        href={`/contacts/${contact.id}`}
+                        className="outline-none after:absolute after:inset-0 focus-visible:underline"
+                      >
+                        {contact.name}
+                      </Link>
+                    </div>
                   </TableCell>
                   <TableCell className="hidden max-w-72 truncate text-muted-foreground md:table-cell">
                     {contact.about}
@@ -105,7 +109,7 @@ export async function ContactList({
                   <TableCell className="hidden tabular-nums sm:table-cell">
                     {contact.phone}
                   </TableCell>
-                  <TableCell className="hidden pr-4 lg:table-cell">
+                  <TableCell className="hidden pr-5 lg:table-cell">
                     {contact.email}
                   </TableCell>
                 </TableRow>
@@ -126,8 +130,10 @@ export async function ContactList({
 
 function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-background px-6 py-12 text-center">
-      <UserRound className="size-8 text-muted-foreground" aria-hidden />
+    <div className="flex flex-col items-center gap-2 rounded-card border border-dashed border-input bg-card px-6 py-12 text-center">
+      <div className="mb-2 flex size-12 items-center justify-center rounded-field bg-primary-tint text-primary-soft">
+        <UserRound className="size-5.5" aria-hidden />
+      </div>
       <p className="font-medium">{title}</p>
       <p className="max-w-sm text-sm text-muted-foreground">{hint}</p>
     </div>
@@ -137,10 +143,13 @@ function EmptyState({ title, hint }: { title: string; hint: string }) {
 export function ContactListSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="Загружаем контакты">
-      <div className="h-5 w-40 animate-pulse rounded bg-muted" />
-      <div className="flex flex-col gap-3 rounded-xl border bg-background p-4">
+      <div className="h-5 w-40 animate-pulse rounded-full bg-muted" />
+      <div className="flex flex-col gap-3 rounded-card border bg-card p-5">
         {Array.from({ length: 8 }, (_, i) => (
-          <div key={i} className="h-5 animate-pulse rounded bg-muted" />
+          <div key={i} className="flex items-center gap-3">
+            <div className="size-9 flex-none animate-pulse rounded-full bg-primary-tint-strong" />
+            <div className="h-2.5 w-2/5 animate-pulse rounded-full bg-muted" />
+          </div>
         ))}
       </div>
     </div>

@@ -27,7 +27,6 @@ export function NoteForm({
         defaultValue={state.body}
         placeholder="О чём поговорили, о чём договорились…"
         aria-invalid={state.error ? true : undefined}
-        className="bg-background"
         onKeyDown={(event) => {
           if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
             event.preventDefault();

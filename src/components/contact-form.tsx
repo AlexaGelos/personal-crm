@@ -139,7 +139,7 @@ function Field({ label, name, error, multiline, required, ...inputProps }: Field
           rows={3}
         />
       ) : (
-        <Input {...shared} {...inputProps} className="h-9" />
+        <Input {...shared} {...inputProps} />
       )}
       {error && (
         <p id={errorId} className="text-sm text-destructive">

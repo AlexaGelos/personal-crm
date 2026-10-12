@@ -60,7 +60,7 @@ export function SearchBox() {
   return (
     <div className="relative">
       <Search
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-muted-foreground"
         aria-hidden
       />
       <Input
@@ -74,19 +74,19 @@ export function SearchBox() {
         placeholder={PLACEHOLDER}
         aria-label={PLACEHOLDER}
         autoComplete="off"
-        className="h-10 bg-background pr-10 pl-9 [&::-webkit-search-cancel-button]:hidden"
+        className="h-12 pr-12 pl-11 placeholder:text-sm [&::-webkit-search-cancel-button]:hidden"
       />
-      <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center">
+      <div className="absolute top-1/2 right-1 flex -translate-y-1/2 items-center">
         {isPending ? (
           <LoaderCircle
-            className="mr-1.5 size-4 animate-spin text-muted-foreground"
+            className="mr-3 size-4 animate-spin text-muted-foreground"
             aria-label="Ищем…"
           />
         ) : value ? (
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             onClick={() => handleChange("")}
             aria-label="Очистить поиск"
           >
@@ -102,14 +102,14 @@ export function SearchBoxFallback() {
   return (
     <div className="relative">
       <Search
-        className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-muted-foreground"
         aria-hidden
       />
       <Input
         disabled
         placeholder={PLACEHOLDER}
         aria-label={PLACEHOLDER}
-        className="h-10 bg-background pl-9"
+        className="h-12 pl-11 placeholder:text-sm"
       />
     </div>
   );

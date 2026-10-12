@@ -4,36 +4,41 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  Design tokens. The look follows the landing page, theme "Dusk":
+  personal-crm-landing/src/styles/tokens.css. The landing token a value comes
+  from is noted next to it.
+
+  The app has one dark theme. <html> carries the `dark` class, so the `dark:`
+  variants inside shadcn/ui components apply as well.
+*/
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-field: var(--field);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  --color-subtle-foreground: var(--subtle-foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-tint-strong: var(--primary-tint-strong);
+  --color-primary-line: var(--primary-line);
+  --color-primary-line-strong: var(--primary-line-strong);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -47,86 +52,78 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+@theme {
+  /* Radii */
+  --radius-chip: 0.75rem;   /* 12px, landing: chip - note boxes */
+  --radius-field: 0.875rem; /* 14px, landing: field - search and form fields */
+  --radius-inner: 1rem;     /* 16px, landing: inner - notes, inner cards */
+  --radius-card: 1.5rem;    /* 24px, landing: card - cards, list, dialog */
+
+  /* Shadows */
+  --shadow-cta: 0 10px 40px -10px rgb(164 147 255 / 0.7);        /* landing: shadow-cta */
+  --shadow-cta-hover: 0 12px 44px -10px rgb(164 147 255 / 0.85); /* landing: shadow-cta-hover */
+  --shadow-panel: 0 40px 120px -40px rgb(164 147 255 / 0.35);    /* landing: shadow-preview */
+
+  /* Glow at the top of every page (use as background-image) */
+  --glow-page: radial-gradient(120% 640px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%);   /* landing: glow-hero */
+  --glow-page-lg: radial-gradient(70% 760px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%); /* landing: glow-hero-lg */
+
+  --tracking-logo: -0.01em; /* landing: tracking-logo */
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+:root {
+  --radius: 0.875rem; /* landing: field */
+
+  /* Surfaces */
+  --background: #0d0a18; /* landing: page */
+  --card: #15112a;       /* landing: card */
+  --popover: #17132a;    /* landing: card-raised */
+
+  /* Text */
+  --foreground: #f4f2ff;        /* landing: ink */
+  --card-foreground: #f4f2ff;
+  --popover-foreground: #f4f2ff;
+  --muted-foreground: #b9b3d6;  /* landing: ink-muted - secondary text, labels */
+  --subtle-foreground: #8e87ad; /* landing: ink-subtle - placeholders */
+
+  /* Accent: buttons, avatars, focus */
+  --primary: #a493ff;                             /* landing: accent */
+  --primary-foreground: #0d0a18;                  /* landing: page - text on accent buttons */
+  --primary-hover: #b3a6ff;                       /* landing: accent-hover */
+  --primary-soft: #d9d3ff;                        /* landing: accent-soft - text on accent-tinted chips */
+  --primary-tint: rgb(164 147 255 / 0.12);        /* landing: accent-tint-icon */
+  --primary-tint-strong: rgb(164 147 255 / 0.18); /* landing: accent-tint-strong - avatars */
+  --primary-line: rgb(164 147 255 / 0.2);         /* landing: accent-line */
+  --primary-line-strong: rgb(164 147 255 / 0.35); /* landing: accent-line-strong - badge border */
+  --ring: #a493ff;                                /* landing: accent */
+
+  /* Translucent fills and lines (white) */
+  --secondary: rgb(255 255 255 / 0.08); /* landing: fill-avatar */
+  --secondary-foreground: #f4f2ff;
+  --muted: rgb(255 255 255 / 0.08);     /* landing: fill-avatar - hover fills, skeletons */
+  --accent: rgb(255 255 255 / 0.04);    /* landing: fill */
+  --accent-foreground: #f4f2ff;
+  --field: rgb(255 255 255 / 0.05);     /* landing: fill-input - search and form fields */
+  --border: rgb(255 255 255 / 0.07);    /* landing: line - card borders, dividers */
+  --input: rgb(255 255 255 / 0.09);     /* landing: line-strong - field borders */
+
+  /* Not on the landing: red for deleting */
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --destructive-foreground: #0d0a18;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
   }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
-  }
-  html {
-    @apply font-sans;
   }
 }

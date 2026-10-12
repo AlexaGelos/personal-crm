@@ -42,7 +42,7 @@ async function EditContact({
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="text-xl font-semibold">Изменить контакт</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Изменить контакт</h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -66,10 +66,10 @@ async function EditContact({
 
 function EditSkeleton() {
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-background p-4" aria-busy="true">
-      <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+    <div className="flex flex-col gap-4 rounded-card border bg-card p-5 sm:p-7" aria-busy="true">
+      <div className="h-7 w-48 animate-pulse rounded-full bg-muted" />
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="h-9 animate-pulse rounded bg-muted" />
+        <div key={i} className="h-11 animate-pulse rounded-field bg-muted" />
       ))}
     </div>
   );

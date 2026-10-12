@@ -5,13 +5,13 @@ import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
 import { addNote, deleteContact } from "@/app/actions";
+import { Avatar } from "@/components/avatar";
 import { BackLink } from "@/components/back-link";
 import { DeleteContactButton } from "@/components/delete-contact-button";
 import { NoteForm } from "@/components/note-form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -50,14 +50,22 @@ async function ContactDetails({
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>
-            <h1 className="text-2xl font-semibold tracking-tight">{contact.name}</h1>
-          </CardTitle>
-          {contact.about && (
-            <CardDescription className="text-base">{contact.about}</CardDescription>
-          )}
-          <CardAction className="flex gap-2">
+        {/* On narrow screens the buttons wrap below the name instead of squeezing it */}
+        <CardHeader className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-1 basis-64 items-center gap-4">
+            <Avatar name={contact.name} size="lg" />
+            <div className="flex min-w-0 flex-col gap-1">
+              <CardTitle>
+                <h1 className="text-2xl font-semibold tracking-tight break-words">
+                  {contact.name}
+                </h1>
+              </CardTitle>
+              {contact.about && (
+                <CardDescription className="text-base">{contact.about}</CardDescription>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-none gap-2">
             <Button asChild variant="outline">
               <Link href={`/contacts/${contact.id}/edit`}>
                 <Pencil aria-hidden />
@@ -68,7 +76,7 @@ async function ContactDetails({
               contactName={contact.name}
               action={deleteContact.bind(null, contact.id)}
             />
-          </CardAction>
+          </div>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-[10rem_1fr]">
@@ -81,7 +89,7 @@ async function ContactDetails({
               {contact.phone && (
                 <a
                   href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}
-                  className="tabular-nums underline-offset-4 hover:underline"
+                  className="text-primary-soft tabular-nums underline-offset-4 hover:underline"
                 >
                   {contact.phone}
                 </a>
@@ -91,7 +99,7 @@ async function ContactDetails({
               {contact.email && (
                 <a
                   href={`mailto:${contact.email}`}
-                  className="break-all underline-offset-4 hover:underline"
+                  className="break-all text-primary-soft underline-offset-4 hover:underline"
                 >
                   {contact.email}
                 </a>
@@ -103,8 +111,13 @@ async function ContactDetails({
       </Card>
 
       <section className="flex flex-col gap-4" aria-labelledby="notes-heading">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 id="notes-heading" className="text-lg font-semibold">
+        <div className="flex items-center justify-between gap-3">
+          {/* Pill heading with an accent dot, like the landing's section headings */}
+          <h2
+            id="notes-heading"
+            className="flex h-8.5 items-center gap-2 rounded-full border border-primary-line-strong bg-primary-tint px-3.5 text-sm font-medium text-primary-soft"
+          >
+            <span className="size-1.5 rounded-full bg-primary" aria-hidden />
             Заметки
           </h2>
           <span className="text-sm text-muted-foreground">
@@ -115,13 +128,13 @@ async function ContactDetails({
         <NoteForm action={addNote.bind(null, contact.id)} />
 
         {notes.length === 0 ? (
-          <p className="rounded-xl border border-dashed bg-background px-4 py-8 text-center text-sm text-muted-foreground">
+          <p className="rounded-inner border border-dashed border-input bg-card px-4 py-8 text-center text-sm text-muted-foreground">
             Заметок пока нет. Запишите, о чём поговорили и о чём договорились.
           </p>
         ) : (
           <ol className="flex flex-col gap-3">
             {notes.map((note) => (
-              <li key={note.id} className="rounded-xl border bg-background p-4">
+              <li key={note.id} className="rounded-inner border bg-card px-5 py-4">
                 <time
                   dateTime={note.createdAt.toISOString()}
                   className="text-xs text-muted-foreground"
@@ -152,12 +165,17 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
 function ContactSkeleton() {
   return (
     <div className="flex flex-col gap-5" aria-busy="true" aria-label="Загружаем контакт">
-      <div className="flex flex-col gap-4 rounded-xl border bg-background p-4">
-        <div className="h-8 w-64 animate-pulse rounded bg-muted" />
-        <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-        <div className="h-24 animate-pulse rounded bg-muted" />
+      <div className="flex flex-col gap-4 rounded-card border bg-card p-5 sm:p-7">
+        <div className="flex items-center gap-4">
+          <div className="size-13 flex-none animate-pulse rounded-full bg-primary-tint-strong" />
+          <div className="flex flex-1 flex-col gap-2">
+            <div className="h-7 w-full max-w-64 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-full max-w-48 animate-pulse rounded-full bg-muted" />
+          </div>
+        </div>
+        <div className="h-24 animate-pulse rounded-chip bg-muted" />
       </div>
-      <div className="h-24 animate-pulse rounded-xl bg-muted" />
+      <div className="h-24 animate-pulse rounded-inner bg-muted" />
     </div>
   );
 }

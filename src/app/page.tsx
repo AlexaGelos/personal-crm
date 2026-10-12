@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Контакты</h1>
-        <Button asChild size="lg">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold tracking-tight lg:text-4xl">Контакты</h1>
+        <Button asChild size="lg" className="shadow-cta hover:shadow-cta-hover">
           <Link href="/contacts/new">
             <Plus aria-hidden />
             Добавить контакт
