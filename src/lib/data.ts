@@ -39,7 +39,7 @@ function searchCondition(query: string): SQL | undefined {
   return or(...conditions);
 }
 
-export async function listContacts(query: string) {
+export async function listContacts(query: string, limit: number) {
   return db
     .select({
       id: contacts.id,
@@ -50,11 +50,13 @@ export async function listContacts(query: string) {
     })
     .from(contacts)
     .where(searchCondition(query))
-    .orderBy(asc(contacts.name), asc(contacts.id));
+    .orderBy(asc(contacts.name), asc(contacts.id))
+    .limit(limit);
 }
 
-export async function countContacts() {
-  return db.$count(contacts);
+// Counts contacts matching the query; an empty query counts all of them
+export async function countContacts(query = "") {
+  return db.$count(contacts, searchCondition(query));
 }
 
 export async function getContact(id: number) {

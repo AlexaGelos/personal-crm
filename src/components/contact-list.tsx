@@ -9,19 +9,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ShowMoreButton } from "@/components/show-more-button";
 import { countContacts, listContacts } from "@/lib/data";
-import { pluralize } from "@/lib/format";
+import { formatNumber, pluralize } from "@/lib/format";
 
 const CONTACT_FORMS: [string, string, string] = ["контакт", "контакта", "контактов"];
+
+// Contacts shown on open and added by each "Показать ещё" click
+const PAGE_SIZE = 50;
+
+// "?limit=100" -> 100; missing, malformed or too small -> the first batch
+function parseLimit(value: string | string[] | undefined) {
+  if (typeof value !== "string" || !/^\d{1,6}$/.test(value)) return PAGE_SIZE;
+  return Math.max(Number(value), PAGE_SIZE);
+}
+
+function showMoreHref(query: string, limit: number) {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  params.set("limit", String(limit));
+  return `/?${params}`;
+}
 
 export async function ContactList({
   searchParams,
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
-  const { q } = await searchParams;
+  const { q, limit: limitParam } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
-  const [rows, total] = await Promise.all([listContacts(query), countContacts()]);
+  const limit = parseLimit(limitParam);
+  const [rows, total, matched] = await Promise.all([
+    listContacts(query, limit),
+    countContacts(),
+    query ? countContacts(query) : null,
+  ]);
+  const found = matched ?? total;
+  const hasMore = rows.length < found;
 
   if (total === 0) {
     return (
@@ -32,13 +56,20 @@ export async function ContactList({
     );
   }
 
+  let summary: string;
+  if (query) {
+    summary = hasMore
+      ? `Найдено: ${formatNumber(found)}, показано ${formatNumber(rows.length)}`
+      : `Найдено: ${formatNumber(found)} (всего ${pluralize(total, CONTACT_FORMS)})`;
+  } else {
+    summary = hasMore
+      ? `Показано ${formatNumber(rows.length)} из ${formatNumber(total)}`
+      : `Всего ${pluralize(total, CONTACT_FORMS)}`;
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        {query
-          ? `Найдено: ${rows.length.toLocaleString("ru-RU")} (всего ${pluralize(total, CONTACT_FORMS)})`
-          : `Всего ${pluralize(total, CONTACT_FORMS)}`}
-      </p>
+      <p className="text-sm text-muted-foreground">{summary}</p>
 
       {rows.length === 0 ? (
         <EmptyState
@@ -81,6 +112,12 @@ export async function ContactList({
               ))}
             </TableBody>
           </Table>
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <ShowMoreButton href={showMoreHref(query, rows.length + PAGE_SIZE)} />
         </div>
       )}
     </div>
