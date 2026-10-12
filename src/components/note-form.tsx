@@ -31,6 +31,9 @@ export function NoteForm({
         onKeyDown={(event) => {
           if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
             event.preventDefault();
+            // requestSubmit() ignores the disabled button: skip while the note is saving,
+            // otherwise a second press queues the same note again
+            if (pending) return;
             event.currentTarget.form?.requestSubmit();
           }
         }}

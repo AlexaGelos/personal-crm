@@ -9,13 +9,21 @@ function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
+// "ё" is often typed as "е": compare names with both folded to "е"
+function foldYo(value: string) {
+  return value.replace(/ё/g, "е").replace(/Ё/g, "Е");
+}
+
 // Matches the query against name, phone and email, case-insensitive
 function searchCondition(query: string): SQL | undefined {
   if (!query) return undefined;
 
   const pattern = `%${escapeLike(query)}%`;
   const conditions = [
-    ilike(contacts.name, pattern),
+    ilike(
+      sql`translate(${contacts.name}, 'ёЁ', 'еЕ')`,
+      `%${escapeLike(foldYo(query))}%`,
+    ),
     ilike(contacts.phone, pattern),
     ilike(contacts.email, pattern),
   ];
