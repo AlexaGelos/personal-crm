@@ -25,6 +25,11 @@ export APP_IMAGE="$IMAGE_REPO:$sha"
 log() { echo "[$(date -u +%FT%TZ)] $*" | tee -a deploy.log; }
 compose() { docker compose -p prod "$@"; }
 
+# Successfully deployed versions from deploy.log, newest first, without repeats
+deployed_versions() {
+  { grep -o 'OK: [0-9a-f]\{40\}' deploy.log 2>/dev/null || true; } | cut -c5- | tac | awk '!seen[$0]++'
+}
+
 # One deploy at a time
 exec 9>deploy.lock
 if ! flock -n 9; then
@@ -49,9 +54,6 @@ else
   fi
   DOCKER_CONFIG=$docker_config docker pull --quiet "$APP_IMAGE"
 fi
-
-# Remembered for cleanup and for the rollback hint
-previous_image=$(docker inspect --format '{{.Config.Image}}' prod-app-1 2>/dev/null || true)
 
 # 2. Migrations. If they fail, the current version keeps running untouched
 log "Applying migrations"
@@ -78,17 +80,20 @@ done
 if [[ $healthy != true ]]; then
   log "FAILED: smoke, $HEALTH_URL does not answer 200. $sha is running but broken"
   compose logs --tail 50 app || true
-  if [[ -n $previous_image && $previous_image != "$APP_IMAGE" ]]; then
-    echo "To roll back by hand: ssh crm, then: sudo -u deploy bash $SCRIPT ${previous_image##*:}"
+  previous_sha=$(deployed_versions | grep -vxF "$sha" | head -1 || true)
+  if [[ -n $previous_sha ]]; then
+    echo "To roll back by hand: ssh crm, then: sudo -u deploy bash $SCRIPT $previous_sha"
   fi
   exit 1
 fi
 
 log "OK: $sha is live"
 
-# 5. Keep only the current and the previous image of the app on disk
-docker image ls "$IMAGE_REPO" --format '{{.Repository}}:{{.Tag}}' | while read -r image; do
-  if [[ $image != "$APP_IMAGE" && $image != "$previous_image" ]]; then
-    docker image rm "$image" >/dev/null || echo "Could not remove $image"
+# 5. Keep on disk only the images of the last two successfully deployed versions:
+# the current one and the previous one to roll back to
+keep=$(deployed_versions | head -2 || true)
+docker image ls "$IMAGE_REPO" --format '{{.Tag}}' | while read -r tag; do
+  if ! grep -qxF "$tag" <<<"$keep"; then
+    docker image rm "$IMAGE_REPO:$tag" >/dev/null || echo "Could not remove $IMAGE_REPO:$tag"
   fi
 done

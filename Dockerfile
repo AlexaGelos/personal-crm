@@ -11,7 +11,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN pnpm build
+RUN STANDALONE_BUILD=1 pnpm build
 
 # Migrations and seeding run outside Next.js: compile them to plain JS and put
 # their only two dependencies next to them
