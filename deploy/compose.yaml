@@ -10,6 +10,8 @@ x-logging: &logging
     max-file: "3"
 
 x-app-environment: &app-environment
+  # Pages show dates and times in this zone, the same as on the owner's computer
+  TZ: Europe/Moscow
   POSTGRES_HOST: db
   POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
