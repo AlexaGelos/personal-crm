@@ -19,9 +19,7 @@ export default function Error({
     <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
       <h1 className="text-2xl font-semibold tracking-tight">Что-то пошло не так</h1>
       <p className="text-sm text-muted-foreground">
-        Не получилось загрузить данные. Проверьте, что база данных запущена
-        (Docker Desktop и команда <code>docker compose up -d</code>), и
-        попробуйте ещё раз.
+        Не получилось загрузить данные. Попробуйте ещё раз через минуту.
       </p>
       <Button onClick={() => retry()}>Попробовать ещё раз</Button>
     </div>
