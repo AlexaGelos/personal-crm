@@ -2,7 +2,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import { databaseConfig } from "./config";
+import { databaseConfig, loadLocalEnv } from "./config";
 import { contacts, notes } from "./schema";
 import {
   ABOUT,
@@ -135,7 +135,7 @@ function chunk<T>(items: T[], size: number) {
 }
 
 async function main() {
-  process.loadEnvFile(".env");
+  loadLocalEnv();
   const sql = postgres({ ...databaseConfig(), max: 1, onnotice: () => {} });
   const db = drizzle(sql);
 
