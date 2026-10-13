@@ -55,14 +55,14 @@ previous_image=$(docker inspect --format '{{.Config.Image}}' prod-app-1 2>/dev/n
 
 # 2. Migrations. If they fail, the current version keeps running untouched
 log "Applying migrations"
-if ! compose run --rm -T migrate; then
+if ! compose run --rm -T --quiet-pull migrate; then
   log "FAILED: migrations, $sha was not started. The previous version keeps running"
   exit 1
 fi
 
 # 3. New version of the app
 log "Starting the app"
-compose up -d app
+compose up -d --quiet-pull app
 
 # 4. Smoke: /health must answer 200 within a minute
 log "Smoke check $HEALTH_URL"
