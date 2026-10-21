@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { ContactList, ContactListSkeleton } from "@/components/contact-list";
+import { DeletedContactNotice } from "@/components/deleted-contact-notice";
 import { SearchBox, SearchBoxFallback } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +22,10 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
 
       <Suspense fallback={<SearchBoxFallback />}>
         <SearchBox />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <DeletedContactNotice />
       </Suspense>
 
       <Suspense fallback={<ContactListSkeleton />}>

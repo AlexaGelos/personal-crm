@@ -81,10 +81,15 @@ export async function deleteContact(contactId: number) {
   const id = idSchema.parse(contactId);
 
   // Notes are removed by the ON DELETE CASCADE foreign key
-  await db.delete(contacts).where(eq(contacts.id, id));
+  const [deleted] = await db
+    .delete(contacts)
+    .where(eq(contacts.id, id))
+    .returning({ name: contacts.name });
 
   revalidatePath("/");
-  redirect("/");
+  // ?deleted= makes the list show a "contact deleted" message. Nothing was
+  // deleted (e.g. already gone in another tab) - no message
+  redirect(deleted ? `/?${new URLSearchParams({ deleted: deleted.name })}` : "/");
 }
 
 export async function addNote(
