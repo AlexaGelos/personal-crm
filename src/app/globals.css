@@ -43,6 +43,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-silver-foreground: var(--silver-foreground);
+  --color-silver-muted-foreground: var(--silver-muted-foreground);
+  --color-silver-line: var(--silver-line);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -63,10 +66,16 @@
   --shadow-cta: 0 10px 40px -10px rgb(164 147 255 / 0.7);        /* landing: shadow-cta */
   --shadow-cta-hover: 0 12px 44px -10px rgb(164 147 255 / 0.85); /* landing: shadow-cta-hover */
   --shadow-panel: 0 40px 120px -40px rgb(164 147 255 / 0.35);    /* landing: shadow-preview */
+  --shadow-sheen: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 30px -14px rgb(0 0 0 / 0.7); /* not on the landing: lit top edge of the silver message */
 
   /* Glow at the top of every page (use as background-image) */
   --glow-page: radial-gradient(120% 640px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%);   /* landing: glow-hero */
   --glow-page-lg: radial-gradient(70% 760px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%); /* landing: glow-hero-lg */
+
+  /* Not on the landing: shiny dark silver, the "contact deleted" message (use as background-image) */
+  --sheen-silver:
+    linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0) 55%),
+    linear-gradient(115deg, #26272c 0%, #3d3f45 28%, #56585f 44%, #3a3c42 58%, #2a2b30 78%, #3b3d43 100%);
 
   --tracking-logo: -0.01em; /* landing: tracking-logo */
 }
@@ -110,6 +119,11 @@
   /* Not on the landing: red for deleting */
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: #0d0a18;
+
+  /* Not on the landing: text and edge on the dark silver message (--sheen-silver) */
+  --silver-foreground: #f5f5f7;
+  --silver-muted-foreground: #d6d7dc;
+  --silver-line: rgb(255 255 255 / 0.16);
 }
 
 @layer base {
