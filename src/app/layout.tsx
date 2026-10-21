@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Onest } from "next/font/google";
 import Link from "next/link";
 
+import { DemonHead } from "@/components/demon-head";
 import { Logo } from "@/components/logo";
+import { SideFlames } from "@/components/side-flames";
 
 import "./globals.css";
 
@@ -24,8 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ru" className={`${onest.variable} dark h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-(image:--glow-page) bg-no-repeat lg:bg-(image:--glow-page-lg)">
+        <SideFlames />
         <header>
-          <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-5 lg:px-10">
+          <div className="relative mx-auto flex h-14 w-full max-w-5xl items-center px-5 lg:px-10">
             <Link
               href="/"
               // Padding with negative margins: a finger-sized tap area, same layout
@@ -34,6 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Logo className="size-5.5 lg:size-6.5" aria-hidden />
               Личная CRM
             </Link>
+            <DemonHead
+              className="absolute left-1/2 size-10 -translate-x-1/2 text-primary drop-shadow-demon lg:size-12"
+              aria-hidden
+            />
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-5 pt-4 pb-12 lg:px-10 lg:pt-8 lg:pb-20">

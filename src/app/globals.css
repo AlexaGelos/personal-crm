@@ -78,6 +78,18 @@
     linear-gradient(115deg, #26272c 0%, #3d3f45 28%, #56585f 44%, #3a3c42 58%, #2a2b30 78%, #3b3d43 100%);
 
   --tracking-logo: -0.01em; /* landing: tracking-logo */
+
+  /* Demon head in the header and flames along the screen edges; the landing has the same values */
+  --drop-shadow-demon: 0 0 8px rgb(164 147 255 / 0.55); /* landing: drop-shadow-demon */
+  --animate-flame-1: flame-flicker 3.8s ease-in-out infinite;       /* landing: animate-flame-1 */
+  --animate-flame-2: flame-flicker 4.6s ease-in-out -1.6s infinite; /* landing: animate-flame-2 */
+  --animate-flame-3: flame-flicker 3.2s ease-in-out -0.8s infinite; /* landing: animate-flame-3 */
+
+  @keyframes flame-flicker {
+    0%, 100% { transform: scaleY(1) skewX(0deg); opacity: 1; }
+    30% { transform: scaleY(0.93) skewX(-3deg); opacity: 0.8; }
+    65% { transform: scaleY(1.04) skewX(2deg); opacity: 0.95; }
+  }
 }
 
 :root {
