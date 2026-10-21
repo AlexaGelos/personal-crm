@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Onest } from "next/font/google";
+import { Onest, Ponomar } from "next/font/google";
 import Link from "next/link";
 
 import { DemonHead } from "@/components/demon-head";
@@ -14,6 +14,16 @@ const onest = Onest({
   subsets: ["latin", "cyrillic"],
 });
 
+// Not on the landing: Church Slavonic lettering for the second line of the "contact deleted" message
+const ponomar = Ponomar({
+  variable: "--font-gothic",
+  weight: "400",
+  subsets: ["cyrillic"],
+  fallback: ["serif"],
+  // Next.js has no size metrics for this font: no size-matched fallback
+  adjustFontFallback: false,
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Личная CRM",
@@ -24,7 +34,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ru" className={`${onest.variable} dark h-full antialiased`}>
+    <html lang="ru" className={`${onest.variable} ${ponomar.variable} dark h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-(image:--glow-page) bg-no-repeat lg:bg-(image:--glow-page-lg)">
         <SideFlames />
         <header>
