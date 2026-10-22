@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Мрачная готика со свечами — обзор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Ponomar&display=swap">
+<style>
+/* Values copied from src/app/globals.css */
+:root {
+  --background: #0d0a18;
+  --card: #15112a;
+  --popover: #17132a;
+  --foreground: #f4f2ff;
+  --muted-foreground: #b9b3d6;
+  --subtle-foreground: #8e87ad;
+  --primary: #a493ff;
+  --primary-soft: #d9d3ff;
+  --primary-tint: rgb(164 147 255 / 0.12);
+  --primary-tint-strong: rgb(164 147 255 / 0.18);
+  --primary-line: rgb(164 147 255 / 0.2);
+  --primary-line-strong: rgb(164 147 255 / 0.35);
+  --secondary: rgb(255 255 255 / 0.08);
+  --accent: rgb(255 255 255 / 0.04);
+  --border: rgb(255 255 255 / 0.07);
+  --input: rgb(255 255 255 / 0.09);
+  --destructive: oklch(0.704 0.191 22.216);
+  --font-sans: "Onest", system-ui, sans-serif;
+  --font-gothic: "Ponomar", serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.page { max-width: 880px; margin: 0 auto; padding: 40px 16px 80px; }
+header.top { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--muted-foreground); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+h1 { font-weight: 600; font-size: 40px; line-height: 1.1; letter-spacing: -0.02em; margin: 16px 0 12px; }
+h2 { font-weight: 600; font-size: 26px; letter-spacing: -0.01em; margin: 56px 0 16px; display: flex; align-items: baseline; gap: 12px; }
+h2 .num { font-size: 15px; color: var(--primary); }
+h3 { font-weight: 600; font-size: 18px; margin: 28px 0 10px; }
+p { margin: 8px 0; }
+a { color: var(--primary-soft); }
+.lead { font-size: 18px; color: var(--muted-foreground); max-width: 680px; }
+.muted { color: var(--subtle-foreground); }
+.small { font-size: 14px; }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 0.86em; background: var(--secondary); padding: 1px 5px; border-radius: 4px; }
+ul.points { padding-left: 20px; margin: 8px 0; }
+ul.points li { margin: 4px 0; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px 24px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--primary-line); font-size: 14px; color: var(--muted-foreground); }
+.chip.accent { color: var(--primary-soft); border-color: var(--primary-line-strong); }
+
+/* Screen sketches: drawn in the new palette so the difference is visible */
+.screens { display: grid; gap: 28px; }
+.screen-title { font-size: 17px; font-weight: 600; margin: 0 0 8px; }
+.device { position: relative; background: #0c0b0b; border: 1px solid var(--border); border-radius: 16px; padding: 16px; color: #d9d1c5; overflow: hidden; }
+.device .serif { font-family: Georgia, "Times New Roman", serif; }
+.appbar { position: relative; display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #1d1a19; margin-bottom: 14px; font-size: 15px; }
+.demon { position: absolute; left: 50%; transform: translateX(-50%); color: #b44a56; font-size: 18px; }
+.lamp { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: -6px auto 6px; width: 200px; font-size: 12px; color: #c9a777; }
+.lamp .ring { width: 160px; height: 18px; border: 2px solid #2b221c; border-radius: 50%; position: relative; }
+.flames { letter-spacing: 14px; color: #ffb35a; font-size: 11px; }
+.sconce { position: absolute; top: 70px; width: 70px; height: 110px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 160, 80, 0.22), rgba(255, 160, 80, 0)); display: flex; align-items: flex-start; justify-content: center; padding-top: 22px; color: #ffb35a; font-size: 11px; letter-spacing: 10px; }
+.sconce.left { left: 4px; }
+.sconce.right { right: 4px; }
+.h1 { font-family: Georgia, serif; font-size: 26px; color: #e3dbcf; }
+.btn-blood { background: #5c0e18; color: #ece4d8; border: 1px solid #7d1a26; padding: 6px 12px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; }
+.btn-ghost { border: 1px solid #3d3836; color: #c9c0b4; padding: 5px 12px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; }
+.search { background: #100e0e; border: 1px solid #2a2625; padding: 9px 14px; color: #857c73; font-size: 14px; margin: 10px 0; }
+.list { background: #110f0f; border: 1px solid #221f1e; }
+.list .row { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid #1a1716; font-size: 14px; }
+.list .row:first-child { border-top: 0; }
+.ava { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #3d3836; display: inline-flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-style: italic; color: #c9c0b4; font-size: 13px; flex: none; }
+.row .name { font-family: Georgia, serif; font-size: 16px; color: #e3dbcf; }
+.row .meta { color: #948a80; font-size: 13px; margin-left: auto; }
+.row.hover { background: linear-gradient(90deg, rgba(255, 150, 70, 0.1), rgba(255, 150, 70, 0)); }
+.row.hover .name { color: #f2dcc0; }
+.notice { border: 1px solid #3a3533; box-shadow: inset 0 0 0 4px #090808, inset 0 0 0 5px #24201f; background: #090808; padding: 10px 14px; font-size: 14px; margin: 10px 0; }
+.notice .gothic { font-family: var(--font-gothic); color: #c26a72; font-size: 18px; }
+.empty { border: 1px dashed #2f2b29; background: #110f0f; padding: 22px; text-align: center; }
+.empty .t { font-family: Georgia, serif; font-size: 18px; color: #e3dbcf; }
+.empty .h { font-size: 13px; color: #948a80; }
+.candle { display: inline-block; width: 6px; height: 34px; background: linear-gradient(90deg, #2a2119, #a69378, #211913); margin-bottom: 8px; position: relative; }
+.candle.smoke::before { content: "~"; position: absolute; top: -18px; left: -3px; color: #8b847e; font-size: 14px; }
+.door { width: 190px; height: 220px; margin: 6px auto 0; border: 1px solid rgba(217, 209, 197, 0.16); border-radius: 50% 50% 0 0 / 34% 34% 0 0; background: linear-gradient(#030303, #0d0b0b); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 10px 22px; text-align: center; gap: 6px; }
+.door .t { font-family: Georgia, serif; font-size: 18px; color: #e3dbcf; white-space: nowrap; }
+.field-k { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #b3a99e; margin: 10px 0 5px; }
+.field-k span { text-transform: none; letter-spacing: 0; color: #857c73; }
+.input { background: #100e0e; border: 1px solid #2a2625; padding: 8px 12px; font-size: 14px; color: #857c73; }
+.input.focus { border-color: rgba(255, 170, 100, 0.55); box-shadow: 0 0 0 3px rgba(255, 150, 70, 0.1); }
+.input.error { border-color: #8e2430; color: #d9d1c5; }
+.err { color: #d77a83; font-size: 13px; margin-top: 4px; }
+.hero-t { font-family: Georgia, serif; font-size: 30px; line-height: 1.05; text-align: center; color: #e3dbcf; margin: 8px 0; }
+.hero-t i { color: #b44a56; }
+.roman { font-family: Georgia, serif; font-size: 30px; color: #b44a56; font-weight: 300; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.steps > div { background: #121010; border: 1px solid #221f1e; padding: 10px; font-size: 13px; }
+.is-new { position: relative; outline: 2px dashed var(--primary); outline-offset: 4px; border-radius: 6px; }
+.new-tag { position: absolute; top: -13px; right: 10px; background: var(--primary); color: var(--background); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; z-index: 2; }
+.callouts { margin: 10px 0 0; padding-left: 20px; font-size: 14px; color: var(--muted-foreground); }
+.callouts li { margin: 3px 0; }
+.palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+.sw { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: 12px; background: var(--card); }
+.sw div { height: 40px; }
+.sw span { display: block; padding: 6px 8px; color: var(--muted-foreground); }
+
+/* Rules */
+.rules { display: grid; gap: 12px; }
+.rule { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 18px; }
+.rule .h { font-weight: 600; margin-bottom: 4px; }
+.example { font-size: 14px; color: var(--muted-foreground); background: var(--accent); border-left: 3px solid var(--primary); padding: 6px 10px; margin-top: 8px; border-radius: 0 8px 8px 0; }
+
+/* Checklist */
+.check-group { margin-bottom: 18px; }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin: 6px 0; cursor: pointer; }
+.check input { margin-top: 5px; accent-color: var(--primary); width: 16px; height: 16px; flex-shrink: 0; }
+.check .sc { font-weight: 600; }
+.check .st { font-size: 14px; color: var(--muted-foreground); }
+.check .st .arrow { color: var(--primary); font-weight: 700; }
+.prep { background: var(--primary-tint); border: 1px solid var(--primary-line); border-radius: 12px; padding: 12px 16px; font-size: 14px; color: var(--muted-foreground); }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.box h3 { margin-top: 0; }
+footer { margin-top: 64px; font-size: 13px; color: var(--subtle-foreground); }
+
+@media (max-width: 720px) {
+  h1 { font-size: 32px; }
+  h2 { font-size: 22px; }
+  .two, .steps { grid-template-columns: 1fr; }
+  .sconce { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top"><span class="dot"></span>Личная CRM · обзор фичи</header>
+<h1>Мрачная готика со свечами</h1>
+<p class="lead">Приложение и лендинг меняют вид: вместо фиолетовых «Сумерек» — полумрак, свечи, кованая люстра на голове демона, бра на стенах. Тексты, порядок блоков и сценарии не меняются.</p>
+<div class="chips">
+  <span class="chip">Сделана, PR открыты</span>
+  <span class="chip">Задачи: 25 из 25</span>
+  <span class="chip">Автотестов в проекте нет — проверка руками</span>
+  <span class="chip accent">Изменение <code>gothic-theme</code> в <code>openspec/changes/</code></span>
+</div>
+
+<!-- 1 -->
+<h2><span class="num">1</span>Коротко</h2>
+<ul class="points">
+  <li>Вид выбран по макетам, нижний ряд «Вариант 2»: <a href="https://claude.ai/artifact/9sscRvrcVZbDizbX8abRA8">холст «Личная CRM — готика»</a>.</li>
+  <li>Новая палитра: почти чёрный фон, текст цвета старой кости, кнопки цвета запёкшейся крови. Новый шрифт заголовков — Cormorant Garamond.</li>
+  <li>На каждой странице: люстра на голове демона, на широком экране бра с каменной кладкой, живое пламя, пылинки, зерно.</li>
+  <li>При удалении контакта гаснут все свечи — в люстре и в бра, комната темнеет; через 8 секунд свечи снова загораются.</li>
+  <li>Делается в двух репозиториях: приложение и лендинг, по одному PR (запрос на слияние изменений) в каждом. База данных и сервер не меняются.</li>
+</ul>
+
+<!-- 2 -->
+<h2><span class="num">2</span>Что появится на экранах</h2>
+<p class="muted small">Наброски в новых цветах, не точные макеты. Новое обведено пунктиром. Точный вид — на холсте.</p>
+
+<div class="screens">
+  <div>
+    <p class="screen-title">Список контактов, компьютер</p>
+    <div class="device">
+      <div class="appbar"><span class="serif">◎ Личная CRM</span><span class="demon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-label="голова демона" role="img"><path d="M12 6.5C8.6 6.5 6 8.9 6 12.3c0 4.1 2.9 7.5 6 9.2 3.1-1.7 6-5.1 6-9.2 0-3.4-2.6-5.8-6-5.8Z"/><path d="M7.4 8.7C4.9 7.6 3.5 5.2 3.5 2.5c1.5 2 3.8 3.3 6.7 4.3"/><path d="M16.6 8.7c2.5-1.1 3.9-3.5 3.9-6.2-1.5 2-3.8 3.3-6.7 4.3"/><path d="M8.6 15.2c.3.5.6.8.9 1 1.5 1.2 3.5 1.2 5 0 .3-.2.6-.5.9-1"/></svg></span><span></span></div>
+      <div class="is-new" style="margin: 14px 0 8px"><span class="new-tag">новое</span>
+        <div class="lamp"><span class="flames">🕯🕯🕯🕯</span><span class="ring"></span><span class="muted small">люстра на цепи от демона</span></div>
+      </div>
+      <div class="sconce left is-new"><span class="new-tag">бра</span>🕯🕯</div>
+      <div class="sconce right">🕯🕯</div>
+      <div style="padding: 0 90px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="h1">Контакты</span><span class="btn-blood">+ Добавить контакт</span></div>
+        <div class="search">Поиск по имени, телефону или почте</div>
+        <div class="muted small" style="color:#948a80">Показано 50 из 230</div>
+        <div class="list" style="margin-top:6px">
+          <div class="row"><span class="ava">А</span><span class="name">Алина Морозова</span><span class="meta">+7 916 204-18-73</span></div>
+          <div class="row hover is-new"><span class="new-tag">тёплое наведение</span><span class="ava">А</span><span class="name">Андрей Волков</span><span class="meta">+7 903 551-02-40</span></div>
+          <div class="row"><span class="ava">А</span><span class="name">Анна Смирнова</span><span class="meta">+7 926 318-77-15</span></div>
+        </div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>Бра и кладка — только на экранах шире 1180 пикселей. Уже — их нет, люстра остаётся.</li>
+      <li>Пылинки плавают в свете люстры, поверх всей страницы лёгкое зерно, по краям тусклые языки пламени.</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Сразу после удаления контакта</p>
+    <div class="device">
+      <div class="appbar"><span class="serif">◎ Личная CRM</span><span class="demon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-label="голова демона" role="img"><path d="M12 6.5C8.6 6.5 6 8.9 6 12.3c0 4.1 2.9 7.5 6 9.2 3.1-1.7 6-5.1 6-9.2 0-3.4-2.6-5.8-6-5.8Z"/><path d="M7.4 8.7C4.9 7.6 3.5 5.2 3.5 2.5c1.5 2 3.8 3.3 6.7 4.3"/><path d="M16.6 8.7c2.5-1.1 3.9-3.5 3.9-6.2-1.5 2-3.8 3.3-6.7 4.3"/><path d="M8.6 15.2c.3.5.6.8.9 1 1.5 1.2 3.5 1.2 5 0 .3-.2.6-.5.9-1"/></svg></span><span></span></div>
+      <div class="sconce left is-new" style="top:60px"><span class="new-tag">гаснут все свечи</span><span style="color:#8b847e">~</span>🕯</div>
+      <div style="padding: 0 0 0 100px">
+        <span class="h1">Контакты</span>
+        <div class="notice is-new"><span class="new-tag">траурная рамка</span>Контакт «Андрей Волков» удалён<div class="gothic">Вы сами отвечаете за своё решение</div></div>
+        <div class="search">Поиск по имени, телефону или почте</div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>Гаснут все свечи: левое бра, люстра, правое бра — быстрой волной слева направо. Над фитилями дымок, свет на стенах, кладка и пылинки уходят в темноту.</li>
+      <li>Через 8 секунд сообщение исчезает и свечи плавно разгораются той же волной. Крестик на сообщении — свечи разгораются сразу.</li>
+      <li>На телефоне бра нет — гаснут все свечи люстры (решено владельцем).</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Пустой список и «никого не нашли»</p>
+    <div class="device" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="empty is-new"><span class="new-tag">новое</span><div class="candle"></div><div class="t">Пока нет ни одного контакта</div><div class="h">Нажмите «Добавить контакт», чтобы записать первого человека.</div></div>
+      <div class="empty is-new"><span class="new-tag">новое</span><div class="candle smoke"></div><div class="t">Никого не нашли по запросу «Андрэй»</div><div class="h">Проверьте написание или поищите по части имени, телефона или почты.</div></div>
+    </div>
+    <ul class="callouts">
+      <li>Пустой список — новая, ни разу не зажжённая свеча. Ничего не нашли — только что погасшая, с тлеющим фитилём и дымом.</li>
+      <li>Пока список загружается — тёмные заготовки строк, по ним проходит тёплый отблеск.</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Форма «Изменить контакт» с ошибкой</p>
+    <div class="device">
+      <div class="h1" style="font-size:22px">Изменить контакт</div>
+      <div class="field-k">Имя <span>(обязательно)</span></div>
+      <div class="input focus is-new" style="color:#d9d1c5"><span class="new-tag">поле в фокусе</span>Андрей Волков</div>
+      <div class="field-k">Почта</div>
+      <div class="input error">a.volkov@yandex</div>
+      <div class="err">Проверьте адрес почты, например: name@example.com</div>
+      <div style="display:flex;gap:8px;margin-top:14px"><span class="btn-blood">Сохранить</span><span class="btn-ghost">Отмена</span></div>
+    </div>
+  </div>
+
+  <div>
+    <p class="screen-title">Страница «Не найдено» и страница ошибки</p>
+    <div class="device">
+      <div class="sconce left" style="left:60px;top:60px">🕯🕯</div>
+      <div class="door is-new"><span class="new-tag">проём в стене</span><div class="t">Такой страницы нет</div><div class="h" style="font-size:12px;color:#948a80">Возможно, контакт удалили или в адресе опечатка.</div><span class="btn-ghost" style="font-size:10px">К списку контактов</span></div>
+    </div>
+    <ul class="callouts">
+      <li>Страница ошибки — тот же проём с «Что-то пошло не так» и кнопкой «Попробовать ещё раз».</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Лендинг</p>
+    <div class="device">
+      <div class="appbar"><span class="serif">◎ Личная CRM</span><span class="demon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-label="голова демона" role="img"><path d="M12 6.5C8.6 6.5 6 8.9 6 12.3c0 4.1 2.9 7.5 6 9.2 3.1-1.7 6-5.1 6-9.2 0-3.4-2.6-5.8-6-5.8Z"/><path d="M7.4 8.7C4.9 7.6 3.5 5.2 3.5 2.5c1.5 2 3.8 3.3 6.7 4.3"/><path d="M16.6 8.7c2.5-1.1 3.9-3.5 3.9-6.2-1.5 2-3.8 3.3-6.7 4.3"/><path d="M8.6 15.2c.3.5.6.8.9 1 1.5 1.2 3.5 1.2 5 0 .3-.2.6-.5.9-1"/></svg></span><span></span></div>
+      <div class="lamp"><span class="flames">🕯🕯🕯🕯</span><span class="ring"></span></div>
+      <div class="sconce left">🕯🕯</div>
+      <div class="sconce right">🕯🕯</div>
+      <div class="hero-t">Не теряйте людей,<br><i>которых знаете лично</i></div>
+      <div style="text-align:center;margin:10px 0 18px"><span class="btn-blood">Открыть приложение →</span></div>
+      <div class="steps is-new"><span class="new-tag">римские цифры</span>
+        <div><div class="roman">I</div>Открываете — видите всех</div>
+        <div><div class="roman">II</div>Добавляете человека</div>
+        <div><div class="roman">III</div>Находите и дописываете</div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>За заголовком едва виден контур готического окна, по первому экрану ползёт туман.</li>
+      <li>В последнем блоке «Начните с одного человека» по бокам два напольных канделябра.</li>
+      <li>Тексты лендинга не меняются.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 3 -->
+<h2><span class="num">3</span>Как это работает</h2>
+<div class="rules">
+  <div class="rule">
+    <div class="h">Одна палитра на приложение и лендинг</div>
+    <div class="palette">
+      <div class="sw"><div style="background:#0c0b0b"></div><span>Ночь — фон</span></div>
+      <div class="sw"><div style="background:#110f0f"></div><span>Склеп — карточки</span></div>
+      <div class="sw"><div style="background:#2a2625"></div><span>Зола — рамки</span></div>
+      <div class="sw"><div style="background:#d9d1c5"></div><span>Кость — текст</span></div>
+      <div class="sw"><div style="background:#948a80"></div><span>Пепел — подписи</span></div>
+      <div class="sw"><div style="background:#5c0e18"></div><span>Запёкшаяся кровь — кнопки</span></div>
+      <div class="sw"><div style="background:#b44a56"></div><span>Тусклый алый — акцент</span></div>
+    </div>
+    <div class="example">Текст читается: контраст основного текста не ниже 4,5:1, крупных заголовков — не ниже 3:1.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Шрифты</div>
+    <p>Cormorant Garamond — заголовки, имена, даты заметок. Onest — текст, подписи, кнопки (как сейчас). Ponomar — только строка <span style="font-family:var(--font-gothic)">«Вы сами отвечаете за своё решение»</span>.</p>
+  </div>
+  <div class="rule">
+    <div class="h">Живое пламя</div>
+    <p>Каждая свеча дрожит в своём ритме, у основания голубоватая, к кончику оранжевая. Вокруг ореол, на фон падает тёплый отсвет.</p>
+    <div class="example">Если в системе включено «уменьшить движение» (настройка для тех, кого укачивает анимация), всё замирает, но свечи продолжают гореть.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Бра — только на широком экране</div>
+    <p>От 1180 пикселей ширины слева и справа висят бра, вокруг них в свете проступает каменная кладка. Уже — бра и кладки нет.</p>
+    <div class="example">Окно 1440 пикселей — бра в полях, на таблицу не заходят. Окно 1000 пикселей — бра нет, люстра на месте.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Свечи гаснут вместе с сообщением об удалении</div>
+    <p>Сообщение «Контакт удалён» живёт 8 секунд (раньше было 5). Пока оно видно, все свечи погашены и дымят, комната в темноте. Сообщение пропало — свечи разгораются.</p>
+    <div class="example">Удалила контакт → в списке сообщение, все свечи погасли одна за другой → через 8 секунд сообщение исчезло, свечи снова горят.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Тёплый отсвет при наведении</div>
+    <p>Строка списка под мышкой теплеет, имя становится цвета свечного света. Кнопки-рамки («Изменить», «Отмена», «Показать ещё») тоже теплеют.</p>
+  </div>
+  <div class="rule">
+    <div class="h">Иконка вкладки — огонёк</div>
+    <p>И у приложения, и у лендинга на вкладке браузера огонёк свечи на тёмном квадрате.</p>
+  </div>
+</div>
+
+<!-- 5 -->
+<h2><span class="num">4</span>Как проверить руками</h2>
+<div class="prep">
+  <b>Подготовка.</b> Приложение — локально (<code>pnpm dev</code>, см. README), лендинг — тоже <code>pnpm dev</code> в своём репозитории. Окно браузера пошире (от 1440 пикселей) и узкое (390 пикселей, режим телефона в браузере). Галочки на этой странице только для удобства и не сохраняются.
+</div>
+
+<div class="check-group">
+  <h3>Цвета и шрифты</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Любая страница</div><div class="st">Открыть список, карточку, форму, лендинг <span class="arrow">→</span> фон почти чёрный, фиолетового нет, «Контакты» и имена — книжным шрифтом с засечками, кнопка «Добавить контакт» тёмно-бордовая, надпись заглавными с разрядкой.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Текст читается</div><div class="st">Посмотреть подписи, пояснения, даты заметок <span class="arrow">→</span> всё читается без напряжения.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Люстра, пламя, бра</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Люстра в приложении</div><div class="st">Список на компьютере <span class="arrow">→</span> под демоном люстра между «Контакты» и кнопкой, заканчивается выше строки поиска.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Люстра на телефоне</div><div class="st">Ширина 390 <span class="arrow">→</span> маленькая люстра справа под шапкой, не перекрывает заголовок и кнопку.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Пламя двигается</div><div class="st">Смотреть несколько секунд <span class="arrow">→</span> огоньки дрожат не в такт.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Уменьшить движение</div><div class="st">Включить в системе «уменьшить движение» и обновить страницу <span class="arrow">→</span> всё замерло, свечи горят.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Бра на широком экране</div><div class="st">Окно 1440 <span class="arrow">→</span> бра в полях слева и справа, на таблицу не заходят, вокруг кладка.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Бра на узком экране</div><div class="st">Сузить окно до 1000 <span class="arrow">→</span> бра и кладка исчезли, люстра осталась.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Детали не мешают читать</div><div class="st">Читать список и карточку <span class="arrow">→</span> пылинки, зерно и отсветы не перекрывают текст.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Наведение</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Строка списка</div><div class="st">Навести мышь на строку <span class="arrow">→</span> строка теплеет, имя светлеет, кружок с буквой светится; убрать мышь <span class="arrow">→</span> плавно гаснет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Кнопки-рамки</div><div class="st">Навести на «Изменить», «Отмена», «Показать ещё», «К списку контактов» <span class="arrow">→</span> рамка и надпись теплеют.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Удаление</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Широкий экран</div><div class="st">Удалить контакт <span class="arrow">→</span> в списке сообщение в траурной рамке, все свечи в люстре и бра погасли и дымят, комната потемнела <span class="arrow">→</span> через 8 секунд сообщение пропало, свечи разгорелись.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Закрыть крестиком</div><div class="st">Удалить контакт и сразу нажать крестик <span class="arrow">→</span> свеча начинает разгораться сразу.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Телефон</div><div class="st">Удалить контакт на ширине 390 <span class="arrow">→</span> гаснут все свечи люстры и загораются вместе с исчезновением сообщения.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Текст сообщения</div><div class="st">Посмотреть сообщение <span class="arrow">→</span> «Контакт «Имя» удалён», ниже «Вы сами отвечаете за своё решение» шрифтом Ponomar.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Состояния, формы, ошибки</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Нет контактов</div><div class="st">Пустая база <span class="arrow">→</span> незажжённая свеча, «Пока нет ни одного контакта», подсказка.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Никого не нашли</div><div class="st">Искать «Андрэй» <span class="arrow">→</span> погасшая свеча с дымом, «Никого не нашли по запросу «Андрэй»».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Загрузка</div><div class="st">Медленный интернет в инструментах браузера, обновить список <span class="arrow">→</span> заготовки строк с тёплым отблеском.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Новый контакт</div><div class="st">«Добавить контакт» <span class="arrow">→</span> подписи мелкими заглавными, у «Имя» «(обязательно)», поле в фокусе с тёплой рамкой.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Ошибка в поле</div><div class="st">Сохранить с почтой «a.volkov@yandex» <span class="arrow">→</span> красная рамка и «Проверьте адрес почты, например: name@example.com».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Такой страницы нет</div><div class="st">Открыть <code>/contacts/999999</code> <span class="arrow">→</span> проём в стене, рядом бра, «Такой страницы нет» в одну строку, кнопка «К списку контактов».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Что-то пошло не так</div><div class="st">Остановить базу и открыть список <span class="arrow">→</span> тот же проём, «Что-то пошло не так», «Попробовать ещё раз».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Иконка вкладки</div><div class="st">Посмотреть на вкладку приложения и лендинга <span class="arrow">→</span> огонёк на тёмном квадрате.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Лендинг</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Первый экран</div><div class="st">Компьютер <span class="arrow">→</span> люстра под демоном, бра по бокам, контур окна, туман, «которых знаете лично» курсивом тусклого алого.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Блоки ниже</div><div class="st">Прокрутить <span class="arrow">→</span> шаги I, II, III; в «Начните с одного человека» два напольных канделябра.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Телефон</div><div class="st">Ширина 390 <span class="arrow">→</span> люстра помещается, бра и канделябров нет, вбок страница не прокручивается.</div></div></label>
+</div>
+
+<!-- 6 -->
+<h2><span class="num">5</span>Что агент решил сам</h2>
+<div class="two">
+  <div class="card box">
+    <h3>Продуктовые — стоит просмотреть</h3>
+    <ul class="points small">
+      <li>Страница ошибки «Что-то пошло не так» — тот же проём в стене, что и «Не найдено»: на холсте её не было.</li>
+      <li>Бра и кладка появляются от ширины 1180 пикселей: уже им не хватает места в полях.</li>
+      <li>Даты заметок — курсивом книжного шрифта, подписи полей и кнопки — заглавными буквами с разрядкой.</li>
+      <li>У лендинга такая же иконка-огонёк, как у приложения.</li>
+      <li>При «уменьшить движение» всё замирает, но свечи горят.</li>
+      <li>Вариант 1 с витражами не делаем, он остаётся только на холсте.</li>
+      <li>На телефоне кнопки формы «Новый контакт» и «Изменить контакт» стоят друг под другом во всю ширину: рядом заглавные надписи не помещаются.</li>
+      <li>На телефоне название «Личная CRM» в шапке чуть меньше, чтобы не налезать на демона.</li>
+      <li>При «уменьшить движение» свечи после удаления гаснут без поднимающегося дымка.</li><li>Свечи гаснут не разом, а быстрой волной слева направо, примерно за полсекунды; комната темнеет почти полностью.</li>
+      <li>Лендинг на телефоне собран по правилам холста (холст нарисован только для компьютера): люстра 300 пикселей, кнопка с надписью помельче, чтобы влезала в одну строку.</li>
+      <li>Голова демона на лендинге — того же алого цвета, что в приложении.</li>
+    </ul>
+  </div>
+  <div class="card box">
+    <h3>Технические — на экраны не влияют</h3>
+    <ul class="points small">
+      <li>Цвета меняются в токенах (общих настройках цвета), поэтому готовые элементы shadcn/ui (библиотека элементов интерфейса) перекрашиваются сами.</li>
+      <li>Шрифт в приложении подключается так же, как Onest и Ponomar; на лендинге файлы шрифта лежат у себя, как Onest. Новых библиотек нет.</li>
+      <li>Свечи гаснут средствами оформления, без передачи данных между частями страницы: пока на странице есть сообщение об удалении, свечи погашены.</li>
+      <li>Зерно — маленькая повторяющаяся картинка, а не тяжёлый фильтр на всю страницу: так легче для телефона.</li>
+      <li>Светильники — отдельные компоненты, одинаковые на всех страницах.</li>
+      <li>В <code>design/</code> лендинга убраны старые HTML-макеты и копия токенов <code>design/tokens.css</code>: токены теперь только в <code>src/styles/tokens.css</code>. Снимки страницы — в JPEG, чтобы не раздувать репозиторий.</li>
+      <li>В <code>CLAUDE.md</code> лендинга поправлена строка про макет: вместо HTML-файлов — холст и снимки.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 7 -->
+<h2><span class="num">6</span>Что осталось неясным</h2>
+<div class="card">
+  <p>Неясного не осталось. Оба вопроса решены владельцем:</p>
+  <ul class="points small">
+    <li>При удалении гаснут все свечи (сначала решили — одна, потом владелец попросил все).</li>
+    <li>Образец вида лендинга <code>design/</code> обновляется: новые токены в <code>README.md</code>, вместо старых HTML-макетов — ссылка на холст.</li>
+  </ul>
+</div>
+
+<footer>Собрано по <code>openspec/changes/gothic-theme/</code>: proposal.md, specs/gothic-theme/spec.md, design.md, tasks.md. Страница только показывает, ничего не меняет.</footer>
+</div>
+</body>
+</html>

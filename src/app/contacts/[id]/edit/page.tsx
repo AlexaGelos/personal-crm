@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function EditContactPage({ params }: PageProps<"/contacts/[id]/edit">) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <Suspense fallback={<EditSkeleton />}>
         <EditContact params={params} />
       </Suspense>
@@ -42,7 +42,7 @@ async function EditContact({
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="text-2xl font-semibold tracking-tight">Изменить контакт</h1>
+            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">Изменить контакт</h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -67,9 +67,9 @@ async function EditContact({
 function EditSkeleton() {
   return (
     <div className="flex flex-col gap-4 rounded-card border bg-card p-5 sm:p-7" aria-busy="true">
-      <div className="h-7 w-48 animate-pulse rounded-full bg-muted" />
+      <div className="h-8 w-56 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="h-11 animate-pulse rounded-field bg-muted" />
+        <div key={i} className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
       ))}
     </div>
   );

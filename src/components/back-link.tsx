@@ -6,7 +6,7 @@ export function BackLink({ href, children }: { href: string; children: React.Rea
     <Link
       href={href}
       // Negative margins enlarge the tap area for fingers without moving the layout
-      className="-my-3 inline-flex w-fit items-center gap-1.5 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      className="-my-3 inline-flex w-fit items-center gap-1.5 py-3 text-sm text-muted-foreground transition-colors duration-400 hover:text-glow-text"
     >
       <ArrowLeft className="size-4" aria-hidden />
       {children}

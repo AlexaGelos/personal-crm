@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { Doorway } from "@/components/doorway";
 import { Button } from "@/components/ui/button";
 
 export default function Error({
@@ -16,12 +17,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-3 py-16 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Что-то пошло не так</h1>
-      <p className="text-sm text-muted-foreground">
-        Не получилось загрузить данные. Попробуйте ещё раз через минуту.
-      </p>
+    <Doorway title="Что-то пошло не так" text="Не получилось загрузить данные. Попробуйте ещё раз через минуту.">
       <Button onClick={() => retry()}>Попробовать ещё раз</Button>
-    </div>
+    </Doorway>
   );
 }

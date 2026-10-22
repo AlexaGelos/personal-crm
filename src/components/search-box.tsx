@@ -60,7 +60,7 @@ export function SearchBox() {
   return (
     <div className="relative">
       <Search
-        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-subtle-foreground"
         aria-hidden
       />
       <Input
@@ -102,7 +102,7 @@ export function SearchBoxFallback() {
   return (
     <div className="relative">
       <Search
-        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute top-1/2 left-4 size-4.5 -translate-y-1/2 text-subtle-foreground"
         aria-hidden
       />
       <Input

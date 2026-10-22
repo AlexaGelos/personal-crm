@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
-// Decorative tongues of flame along the left and right edges of the screen, behind the content
+// Decorative tongues of flame along the left and right edges of the screen, behind the content: dim and slow
 export function SideFlames() {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 text-primary">
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 text-flame-edge">
       <Flames gradientId="side-flames-left" className="left-0" />
       <Flames gradientId="side-flames-right" className="right-0 -scale-x-100" />
     </div>
@@ -25,8 +25,8 @@ function Flames({ gradientId, className }: { gradientId: string; className: stri
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="currentColor" stopOpacity="0" />
-          <stop offset="0.5" stopColor="currentColor" stopOpacity="0.08" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0.35" />
+          <stop offset="0.5" stopColor="currentColor" stopOpacity="0.05" />
+          <stop offset="1" stopColor="currentColor" stopOpacity="0.28" />
         </linearGradient>
       </defs>
       <path

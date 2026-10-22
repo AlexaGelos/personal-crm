@@ -1,7 +1,15 @@
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
-// A circle with the first letter of the name, as in the landing's illustrations
-export function Avatar({ name, size = "default" }: { name: string; size?: "default" | "lg" }) {
+// A circle with the first letter of the name, like a medallion
+export function Avatar({
+  name,
+  size = "default",
+  className,
+}: {
+  name: string;
+  size?: "default" | "lg";
+  className?: string;
+}) {
   // Array.from keeps emoji and other surrogate pairs whole
   const initial = Array.from(name.trim())[0]?.toUpperCase() ?? "";
 
@@ -9,8 +17,9 @@ export function Avatar({ name, size = "default" }: { name: string; size?: "defau
     <span
       aria-hidden
       className={cn(
-        "flex flex-none items-center justify-center rounded-full bg-primary-tint-strong font-semibold text-primary-soft",
-        size === "lg" ? "size-13 text-lg" : "size-9 text-sm",
+        "flex flex-none items-center justify-center rounded-full border border-avatar-line bg-avatar font-heading text-soft-foreground italic transition-[border-color,box-shadow] duration-400",
+        size === "lg" ? "size-16 text-3xl shadow-avatar-ring" : "size-9 text-lg",
+        className,
       )}
     >
       {initial}
