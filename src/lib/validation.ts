@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import type { ContactFrequency } from "@/db/schema";
+
+// Frequency switch values in the order of its buttons; "none" is stored as NULL
+export const frequencyChoices = ["none", "week", "month", "quarter", "year"] as const;
+
+export type FrequencyChoice = (typeof frequencyChoices)[number];
+
 // Raw form values exactly as the user typed them
 export type ContactFields = {
   name: string;
@@ -19,6 +26,22 @@ export type NoteFormState = {
   body?: string;
   error?: string;
 };
+
+export type FrequencyFormState = {
+  error?: string;
+};
+
+// "Связались" was saved: what the undo needs to put the old value back. Moments are ISO strings
+export type ContactedMark = {
+  contactId: number;
+  name: string;
+  previous: string | null;
+  markedAt: string;
+};
+
+export type MarkContactedResult = { mark: ContactedMark } | { error: string };
+
+export type UndoContactedResult = { error?: string };
 
 export const emptyContactFields: ContactFields = {
   name: "",
@@ -61,7 +84,14 @@ export const noteSchema = z
   .min(1, "Напишите текст заметки")
   .max(5000, "Не больше 5000 символов");
 
+export const frequencySchema = z
+  .enum(frequencyChoices)
+  .transform((value): ContactFrequency | null => (value === "none" ? null : value));
+
 export const idSchema = z.number().int().positive().max(2147483647);
+
+// A moment from Date.toISOString(), e.g. "2026-10-22T09:15:00.000Z"
+export const momentSchema = z.iso.datetime();
 
 // Route segment "/contacts/42" -> 42; anything else -> null
 export function parseContactId(segment: string) {

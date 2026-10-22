@@ -4,10 +4,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 
-import { addNote, deleteContact } from "@/app/actions";
+import { addNote, deleteContact, setContactFrequency } from "@/app/actions";
 import { Avatar } from "@/components/avatar";
 import { BackLink } from "@/components/back-link";
 import { DeleteContactButton } from "@/components/delete-contact-button";
+import { FrequencySwitch } from "@/components/frequency-switch";
+import { MarkContacted } from "@/components/mark-contacted";
 import { NoteForm } from "@/components/note-form";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getContact, listNotes } from "@/lib/data";
-import { formatDate, formatDateTime, pluralize } from "@/lib/format";
+import { formatDate, formatDateTime, formatDay, formatOverdue, pluralize } from "@/lib/format";
 import { parseContactId } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -108,6 +110,29 @@ async function ContactDetails({
             <Detail label="В списке с">{formatDate(contact.createdAt)}</Detail>
           </dl>
         </CardContent>
+        {/* Keeping in touch: a strip of its own under the details - five buttons
+            don't fit the narrow column next to a label */}
+        <section
+          aria-labelledby="keep-in-touch-heading"
+          className="mx-(--card-spacing) -mt-1 flex flex-col gap-3.5 border-t border-dashed border-avatar-line pt-5.5"
+        >
+          <h2
+            id="keep-in-touch-heading"
+            className="text-[0.6875rem] font-medium tracking-[0.2em] text-subtle-foreground uppercase"
+          >
+            Как часто общаться
+          </h2>
+          <FrequencySwitch
+            value={contact.contactFrequency ?? "none"}
+            action={setContactFrequency.bind(null, contact.id)}
+            labelledBy="keep-in-touch-heading"
+          />
+          <DueLine dueDate={contact.dueDate} overdueDays={contact.overdueDays} />
+          <MarkContacted
+            contactId={contact.id}
+            lastContacted={contact.lastContactedAt && formatDate(contact.lastContactedAt)}
+          />
+        </section>
       </Card>
 
       <section className="mt-3 flex flex-col gap-4" aria-labelledby="notes-heading">
@@ -160,6 +185,50 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
         {children || <span className="text-muted-foreground">—</span>}
       </dd>
     </div>
+  );
+}
+
+// When to get in touch next; nothing without a frequency
+function DueLine({
+  dueDate,
+  overdueDays,
+}: {
+  dueDate: string | null;
+  overdueDays: number | null;
+}) {
+  if (dueDate === null || overdueDays === null) return null;
+
+  if (overdueDays > 0) {
+    return (
+      <p className="flex items-start gap-2 text-[0.9375rem] text-rose">
+        <FlameIcon />
+        Пора связаться — {formatOverdue(overdueDays)}
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-[0.9375rem] text-muted-foreground">
+      Следующий раз — до <span className="text-foreground">{formatDay(dueDate)}</span>
+    </p>
+  );
+}
+
+// A small candle flame next to "Пора связаться"
+function FlameIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinejoin="round"
+      className="mt-0.75 size-4 flex-none"
+    >
+      <path d="M12 3c2.5 3.2 5 5.8 5 9.5a5 5 0 0 1-10 0C7 8.8 9.5 6.2 12 3Z" />
+      <path d="M12 12c1 1.2 1.8 2 1.8 3.2a1.8 1.8 0 0 1-3.6 0c0-1.2.8-2 1.8-3.2Z" />
+    </svg>
   );
 }
 

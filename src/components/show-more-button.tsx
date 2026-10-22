@@ -6,9 +6,9 @@ import { LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-// Loads the next batch: replaces the URL with a bigger ?limit= and keeps the scroll position.
-// The limit lives in the URL, so "Back" from a contact card returns to the same long list.
-export function ShowMoreButton({ href }: { href: string }) {
+// Shows more or fewer rows: replaces the URL (a bigger ?limit=, ?due=all) and keeps the scroll
+// position. The state lives in the URL, so "Back" from a contact card returns to the same view.
+export function ShowMoreButton({ href, label }: { href: string; label: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -21,7 +21,7 @@ export function ShowMoreButton({ href }: { href: string }) {
       aria-busy={isPending || undefined}
     >
       {isPending && <LoaderCircle className="animate-spin" aria-hidden />}
-      Показать ещё
+      {label}
     </Button>
   );
 }

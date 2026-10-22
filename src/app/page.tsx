@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 
 import { ContactList, ContactListSkeleton } from "@/components/contact-list";
 import { DeletedContactNotice } from "@/components/deleted-contact-notice";
+import { KeepInTouch } from "@/components/keep-in-touch";
 import { SearchBox, SearchBoxFallback } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +23,11 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
           </Link>
         </Button>
       </div>
+
+      {/* No placeholder: most of the time there is no block, a placeholder would only flicker */}
+      <Suspense fallback={null}>
+        <KeepInTouch searchParams={searchParams} />
+      </Suspense>
 
       <Suspense fallback={<SearchBoxFallback />}>
         <SearchBox />
