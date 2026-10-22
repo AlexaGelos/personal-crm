@@ -90,7 +90,8 @@ function ContactFormFields({
         />
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {/* Phones: buttons stacked full width - side by side they do not fit */}
+      <div className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? "Сохраняем…" : submitLabel}
         </Button>
@@ -126,10 +127,10 @@ function Field({ label, name, error, multiline, required, ...inputProps }: Field
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2.5">
       <Label htmlFor={id}>
         {label}
-        {required && <span className="text-muted-foreground">(обязательно)</span>}
+        {required && <span className="font-normal tracking-normal text-subtle-foreground normal-case">(обязательно)</span>}
       </Label>
       {multiline ? (
         <Textarea
@@ -142,7 +143,7 @@ function Field({ label, name, error, multiline, required, ...inputProps }: Field
         <Input {...shared} {...inputProps} />
       )}
       {error && (
-        <p id={errorId} className="text-sm text-destructive">
+        <p id={errorId} className="text-[0.8125rem] text-destructive">
           {error}
         </p>
       )}

@@ -15,7 +15,7 @@ export function NoteForm({
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-2.5">
       <Label htmlFor="note-body" className="sr-only">
         Новая заметка
       </Label>
@@ -43,7 +43,7 @@ export function NoteForm({
         </p>
       )}
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <span className="hidden text-xs text-muted-foreground sm:inline">
+        <span className="hidden text-xs text-subtle-foreground sm:inline">
           Ctrl + Enter — сохранить
         </span>
         <Button type="submit" disabled={pending}>

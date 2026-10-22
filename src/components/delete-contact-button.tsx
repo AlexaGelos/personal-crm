@@ -57,11 +57,7 @@ export function DeleteContactButton({
 function ConfirmButton() {
   const { pending } = useFormStatus();
   return (
-    <Button
-      type="submit"
-      disabled={pending}
-      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-    >
+    <Button type="submit" disabled={pending}>
       {pending ? "Удаляем…" : "Удалить"}
     </Button>
   );

@@ -6,7 +6,7 @@ export function Logo(props: React.ComponentProps<"svg">) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={1.3}
       {...props}
     >
       <circle cx="9" cy="9" r="5.5" />

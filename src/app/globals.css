@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Design tokens. The look follows the landing page, theme "Dusk":
-  personal-crm-landing/src/styles/tokens.css. The landing token a value comes
-  from is noted next to it.
+  Design tokens. Theme "Candlelight": a dark gothic room lit by candles.
+  The look comes from the mockups on the "Личная CRM — готика" canvas, variant 2;
+  the landing (personal-crm-landing/src/styles/tokens.css) uses the same values.
 
   The app has one dark theme. <html> carries the `dark` class, so the `dark:`
   variants inside shadcn/ui components apply as well.
@@ -16,17 +16,23 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-heading: var(--heading);
   --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
-  --font-gothic: var(--font-gothic); /* not on the landing: second line of the "contact deleted" message */
+  --font-heading: var(--font-cormorant);
+  --font-gothic: var(--font-gothic); /* second line of the "contact deleted" message */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-field: var(--field);
   --color-border: var(--border);
+  --color-line-strong: var(--line-strong);
+  --color-row-line: var(--row-line);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-line: var(--destructive-line);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  --color-label: var(--label);
+  --color-soft-foreground: var(--soft-foreground);
   --color-subtle-foreground: var(--subtle-foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
@@ -35,18 +41,21 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
-  --color-primary-soft: var(--primary-soft);
-  --color-primary-tint: var(--primary-tint);
-  --color-primary-tint-strong: var(--primary-tint-strong);
   --color-primary-line: var(--primary-line);
-  --color-primary-line-strong: var(--primary-line-strong);
+  --color-primary-line-hover: var(--primary-line-hover);
+  --color-crimson: var(--crimson);
+  --color-rose: var(--rose);
+  --color-glow-text: var(--glow-text);
+  --color-glow-line: var(--glow-line);
+  --color-avatar: var(--avatar);
+  --color-avatar-line: var(--avatar-line);
+  --color-mourning-line: var(--mourning-line);
+  --color-mourning-inner: var(--mourning-inner);
+  --color-flame-edge: var(--flame-edge);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-silver-foreground: var(--silver-foreground);
-  --color-silver-muted-foreground: var(--silver-muted-foreground);
-  --color-silver-line: var(--silver-line);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -57,86 +66,167 @@
 }
 
 @theme {
-  /* Radii */
-  --radius-chip: 0.75rem;   /* 12px, landing: chip - note boxes */
-  --radius-field: 0.875rem; /* 14px, landing: field - search and form fields */
-  --radius-inner: 1rem;     /* 16px, landing: inner - notes, inner cards */
-  --radius-card: 1.5rem;    /* 24px, landing: card - cards, list, dialog */
+  /* Wall sconces and the stone wall show from this width: narrower screens have no room for them */
+  --breakpoint-sconce: 73.75rem; /* 1180px */
+
+  /* Radii: almost square corners, like cut stone and iron */
+  --radius-chip: 0.0625rem;  /* 1px: small boxes */
+  --radius-field: 0.0625rem; /* 1px: search and form fields, buttons */
+  --radius-inner: 0.0625rem; /* 1px: notes, inner cards */
+  --radius-card: 0.0625rem;  /* 1px: cards, list, dialog */
 
   /* Shadows */
-  --shadow-cta: 0 10px 40px -10px rgb(164 147 255 / 0.7);        /* landing: shadow-cta */
-  --shadow-cta-hover: 0 12px 44px -10px rgb(164 147 255 / 0.85); /* landing: shadow-cta-hover */
-  --shadow-panel: 0 40px 120px -40px rgb(164 147 255 / 0.35);    /* landing: shadow-preview */
-  --shadow-sheen: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 30px -14px rgb(0 0 0 / 0.7); /* not on the landing: lit top edge of the silver message */
+  --shadow-glow: 0 0 22px -8px rgb(255 150 70 / 0.55);                                    /* outline buttons on hover */
+  --shadow-glow-field: 0 0 0 3px rgb(255 150 70 / 0.1), 0 0 26px -8px rgb(255 150 70 / 0.45); /* focused field */
+  --shadow-glow-avatar: 0 0 14px -2px rgb(255 150 70 / 0.35);                             /* avatar in a hovered row */
+  --shadow-invalid: 0 0 0 3px rgb(142 36 48 / 0.15);                                      /* field with an error */
+  --shadow-mourning: inset 0 0 0 4px var(--popover), inset 0 0 0 5px var(--mourning-inner);   /* double mourning frame */
+  --shadow-dialog: inset 0 0 0 5px var(--popover), inset 0 0 0 6px var(--mourning-inner), 0 50px 120px -30px rgb(0 0 0);
+  --shadow-avatar-ring: 0 0 0 4px var(--card), 0 0 0 5px var(--border);                   /* large avatar in the card */
 
-  /* Glow at the top of every page (use as background-image) */
-  --glow-page: radial-gradient(120% 640px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%);   /* landing: glow-hero */
-  --glow-page-lg: radial-gradient(70% 760px at 50% 0%, rgb(164 147 255 / 0.28) 0%, rgb(13 10 24 / 0) 70%); /* landing: glow-hero-lg */
+  /* Light at the top of every page (use as background-image) */
+  --glow-page: radial-gradient(80% 520px at 50% 0%, #181515 0%, rgb(12 11 11 / 0) 70%);
+  /* Warm light around a candle holder on the wall */
+  --glow-candle: radial-gradient(closest-side, rgb(255 160 80 / 0.18), rgb(255 120 50 / 0.05) 50%, rgb(255 120 50 / 0));
+  /* Warm light under the chandelier */
+  --glow-chandelier: radial-gradient(closest-side, rgb(255 160 80 / 0.14), rgb(255 120 50 / 0.04) 55%, rgb(255 120 50 / 0));
+  /* Warm light on a hovered list row */
+  --glow-row: linear-gradient(90deg, rgb(255 150 70 / 0.08), rgb(255 150 70 / 0.025) 55%, rgb(255 150 70 / 0));
+  /* Warm shimmer passing over loading placeholders */
+  --glow-shimmer: linear-gradient(90deg, #1a1716 0px, #2b231d 90px, #1a1716 180px);
+  /* Film grain over the whole page: a small noise tile */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
-  /* Not on the landing: shiny dark silver, the "contact deleted" message (use as background-image) */
-  --sheen-silver:
-    linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0) 55%),
-    linear-gradient(115deg, #26272c 0%, #3d3f45 28%, #56585f 44%, #3a3c42 58%, #2a2b30 78%, #3b3d43 100%);
+  --tracking-logo: 0.02em;
+  --tracking-caps: 0.2em;  /* uppercase labels and buttons */
 
-  --tracking-logo: -0.01em; /* landing: tracking-logo */
+  /* Flames along the screen edges: slow smouldering */
+  --animate-flame-1: flame-smoulder 7s ease-in-out infinite;
+  --animate-flame-2: flame-smoulder 9s ease-in-out -3s infinite;
+  --animate-flame-3: flame-smoulder 6s ease-in-out -1.5s infinite;
+  --animate-shimmer: shimmer 2.6s linear infinite;
 
-  /* Demon head in the header and flames along the screen edges; the landing has the same values */
-  --drop-shadow-demon: 0 0 8px rgb(164 147 255 / 0.55); /* landing: drop-shadow-demon */
-  --animate-flame-1: flame-flicker 3.8s ease-in-out infinite;       /* landing: animate-flame-1 */
-  --animate-flame-2: flame-flicker 4.6s ease-in-out -1.6s infinite; /* landing: animate-flame-2 */
-  --animate-flame-3: flame-flicker 3.2s ease-in-out -0.8s infinite; /* landing: animate-flame-3 */
+  @keyframes flame-smoulder {
+    0%, 100% { transform: scaleY(1); opacity: 0.9; }
+    50% { transform: scaleY(0.94); opacity: 0.6; }
+  }
 
-  @keyframes flame-flicker {
-    0%, 100% { transform: scaleY(1) skewX(0deg); opacity: 1; }
-    30% { transform: scaleY(0.93) skewX(-3deg); opacity: 0.8; }
-    65% { transform: scaleY(1.04) skewX(2deg); opacity: 0.95; }
+  @keyframes shimmer {
+    0% { background-position: -240px 0; }
+    100% { background-position: 480px 0; }
   }
 }
 
 :root {
-  --radius: 0.875rem; /* landing: field */
+  --radius: 0.125rem;
 
   /* Surfaces */
-  --background: #0d0a18; /* landing: page */
-  --card: #15112a;       /* landing: card */
-  --popover: #17132a;    /* landing: card-raised */
+  --background: #0c0b0b; /* night: page */
+  --card: #110f0f;       /* crypt: cards, list */
+  --popover: #090808;    /* dialog and the mourning message */
+  --field: #100e0e;      /* search and form fields */
+  --avatar: #1a1716;     /* avatar circles */
 
   /* Text */
-  --foreground: #f4f2ff;        /* landing: ink */
-  --card-foreground: #f4f2ff;
-  --popover-foreground: #f4f2ff;
-  --muted-foreground: #b9b3d6;  /* landing: ink-muted - secondary text, labels */
-  --subtle-foreground: #8e87ad; /* landing: ink-subtle - placeholders */
+  --foreground: #d9d1c5;         /* bone: main text */
+  --heading: #e3dbcf;            /* headings and names */
+  --card-foreground: #d9d1c5;
+  --popover-foreground: #d9d1c5;
+  --soft-foreground: #c9c0b4;    /* outline buttons, phone and email in the list */
+  --label: #b3a99e;              /* form labels */
+  --muted-foreground: #948a80;   /* ash: secondary text */
+  --subtle-foreground: #857c73;  /* placeholders, column headings */
 
-  /* Accent: buttons, avatars, focus */
-  --primary: #a493ff;                             /* landing: accent */
-  --primary-foreground: #0d0a18;                  /* landing: page - text on accent buttons */
-  --primary-hover: #b3a6ff;                       /* landing: accent-hover */
-  --primary-soft: #d9d3ff;                        /* landing: accent-soft - text on accent-tinted chips */
-  --primary-tint: rgb(164 147 255 / 0.12);        /* landing: accent-tint-icon */
-  --primary-tint-strong: rgb(164 147 255 / 0.18); /* landing: accent-tint-strong - avatars */
-  --primary-line: rgb(164 147 255 / 0.2);         /* landing: accent-line */
-  --primary-line-strong: rgb(164 147 255 / 0.35); /* landing: accent-line-strong - badge border */
-  --ring: #a493ff;                                /* landing: accent */
+  /* Accent: dried blood */
+  --primary: #5c0e18;            /* main buttons */
+  --primary-hover: #6d1420;
+  --primary-foreground: #ece4d8;
+  --primary-line: #7d1a26;       /* main button border */
+  --primary-line-hover: #8e2430;
+  --crimson: #b44a56;            /* demon, italic accent words, step numbers */
+  --rose: #c26a72;               /* links, delete button, the Ponomar line */
 
-  /* Translucent fills and lines (white) */
-  --secondary: rgb(255 255 255 / 0.08); /* landing: fill-avatar */
-  --secondary-foreground: #f4f2ff;
-  --muted: rgb(255 255 255 / 0.08);     /* landing: fill-avatar - hover fills, skeletons */
-  --accent: rgb(255 255 255 / 0.04);    /* landing: fill */
-  --accent-foreground: #f4f2ff;
-  --field: rgb(255 255 255 / 0.05);     /* landing: fill-input - search and form fields */
-  --border: rgb(255 255 255 / 0.07);    /* landing: line - card borders, dividers */
-  --input: rgb(255 255 255 / 0.09);     /* landing: line-strong - field borders */
+  /* Candlelight on hover and focus */
+  --glow-text: #f2dcc0;
+  --glow-line: rgb(255 170 100 / 0.5);
+  --ring: #ffaa64;
 
-  /* Not on the landing: red for deleting */
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: #0d0a18;
+  /* Translucent fills and lines */
+  --secondary: rgb(239 229 211 / 0.05);
+  --secondary-foreground: #d9d1c5;
+  --muted: rgb(239 229 211 / 0.06);   /* hover fills, skeletons */
+  --accent: rgb(239 229 211 / 0.03);
+  --accent-foreground: #d9d1c5;
+  --border: #221f1e;       /* ash: card borders, dividers */
+  --input: #2a2625;        /* field borders */
+  --line-strong: #3d3836;  /* outline buttons */
+  --row-line: #1a1716;     /* lines between list rows */
+  --avatar-line: #332e2c;
 
-  /* Not on the landing: text and edge on the dark silver message (--sheen-silver) */
-  --silver-foreground: #f5f5f7;
-  --silver-muted-foreground: #d6d7dc;
-  --silver-line: rgb(255 255 255 / 0.16);
+  /* Errors and deleting */
+  --destructive: #d77a83;
+  --destructive-foreground: #ece4d8;
+  --destructive-line: #8e2430;
+
+  /* Inside of the dark doorway on the "not found" and error pages */
+  --void-deep: #030303;
+  --void: #060505;
+
+  /* Mourning frame of the "contact deleted" message and the dialog */
+  --mourning-line: #3a3533;
+  --mourning-inner: #24201f;
+
+  /* Flames along the screen edges */
+  --flame-edge: #7a1622;
+
+  /* Candles, used inside the candle holder drawings */
+  --iron-dark: #0b0908;
+  --iron: #2b221c;
+  --iron-light: #3d3027;
+  --iron-shade: #211a15;
+  --iron-edge: #0a0807;
+  --iron-arm: #221b16;
+  --iron-chain: #251d18;
+  --iron-link: #0d0b0a;
+  --iron-rod: #1f1814;
+  --iron-band: #17120f;
+  --iron-pan: #1d1713;
+  --iron-collar: #241c17;
+  --rim-light: rgb(255 190 120 / 0.35);
+  --wax-dark: #2a2119;
+  --wax: #8a7860;
+  --wax-light: #a69378;
+  --wax-shade: #7a6953;
+  --wax-edge: #211913;
+  --wax-top: #c9b08a;
+  --wax-drip: #bfa47e;
+  --wax-lit: #ffd29a;
+  --wax-unlit: #6f604d;
+  --wax-unlit-top: #7d6e5a;
+  --flame-tip: #ff7b2e;
+  --flame-mid: #ff8a35;
+  --flame-body: #ffb35a;
+  --flame-base: #ffd69a;
+  --flame-root: #ffcf8a;
+  --flame-core: #fff6df;
+  --flame-core-base: #ffe2a8;
+  --flame-bloom: #ff9440;
+  --flame-blue: #4f6cff;
+  --wick: #24160d;
+  --halo: #ffb46a;
+  --halo-outer: #ff9a4a;
+  --specular: #ffbe7a;
+  --smoke: rgb(215 208 200 / 0.8);
+  --ember: #ff7a2a;
+
+  /* Stone wall in the light of a candle holder */
+  --stone: rgb(210 180 150 / 0.035);
+  --stone-mortar: rgb(0 0 0 / 0.55);
+  --stone-lit: rgb(255 205 150 / 0.06);
+
+  /* Dust in the chandelier light */
+  --dust: rgb(255 214 170 / 0.85);
+  --dust-glow: rgb(255 180 110 / 0.45);
 }
 
 @layer base {
@@ -153,4 +243,194 @@
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+}
+
+/*
+  Candle animations. Each candle sets its own duration and delay inline,
+  so flames on one page never flicker in step.
+*/
+@layer components {
+  /* The flame stretches and sways from its base */
+  .candle-flame {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: candle-live 2.1s ease-in-out infinite;
+  }
+
+  /* The halo around a flame and the light it throws on the wall */
+  .candle-halo,
+  .candle-light {
+    animation: candle-flicker 2.4s ease-in-out infinite;
+  }
+
+  .candle-light {
+    background-image: var(--glow-candle);
+  }
+
+  /*
+    Every candle can go out: the fire shrinks away and smoke rises. Each candle waits
+    its own --snuff-delay, so the candles of a room go out (and light up) in a wave.
+  */
+  .candle-fire {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    transition:
+      opacity 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s)),
+      transform 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s));
+  }
+
+  .candle-glow {
+    transition: opacity 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s));
+  }
+
+  .candle-smoke {
+    opacity: 0;
+    stroke-dasharray: 40 70;
+  }
+
+  .candle-ember {
+    opacity: 0;
+  }
+
+  /* Smoke over a candle that stays out, as in the "nothing found" state */
+  .candle-smoke-idle {
+    stroke-dasharray: 40 70;
+    animation: candle-smoke 4.6s ease-out infinite;
+  }
+
+  .candle-ember-idle {
+    animation: candle-ember-glow 2.2s ease-in-out infinite;
+  }
+
+  .dust-mote {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--dust);
+    box-shadow: 0 0 6px 1px var(--dust-glow);
+    animation: dust-drift-a 11s ease-in-out infinite;
+  }
+
+  .dust-mote-b {
+    animation-name: dust-drift-b;
+    animation-duration: 14s;
+  }
+
+  .dust-mote-small {
+    width: 2px;
+    height: 2px;
+  }
+
+  .film-grain {
+    background-image: var(--grain);
+    background-size: 200px 200px;
+  }
+}
+
+/*
+  All candles go out while the "contact deleted" message is on the page and light
+  up again when the message goes away: the chandelier and both wall sconces, on
+  phones the chandelier. The light on the walls, the stone and the dust fade too.
+*/
+body:has([data-deleted-notice]) .candle-fire {
+  opacity: 0;
+  transform: scale(0.35, 0.08);
+}
+
+body:has([data-deleted-notice]) .candle-glow {
+  opacity: 0;
+}
+
+body:has([data-deleted-notice]) .candle-smoke {
+  animation: candle-smoke 3.2s ease-out calc(0.4s + var(--snuff-delay, 0s)) infinite;
+}
+
+body:has([data-deleted-notice]) .candle-smoke-late {
+  animation-delay: calc(1.9s + var(--snuff-delay, 0s));
+}
+
+body:has([data-deleted-notice]) .candle-ember {
+  animation: candle-ember-fade 3.5s ease-out calc(0.4s + var(--snuff-delay, 0s)) both;
+}
+
+body:has([data-deleted-notice]) .snuff-light {
+  opacity: 0.12;
+}
+
+.snuff-light {
+  transition: opacity 1.4s ease-in 0.3s;
+}
+
+/* The doorway page has its own sconce next to the doorway */
+body:has([data-doorway]) .layout-sconce {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candle-flame,
+  .candle-halo,
+  .candle-light,
+  .candle-smoke-idle,
+  .candle-ember-idle,
+  .dust-mote {
+    animation: none;
+  }
+
+  .dust-mote {
+    opacity: 0.45;
+  }
+
+  /* The candles still go out after a delete, only without rising smoke */
+  body:has([data-deleted-notice]) .candle-smoke {
+    animation: none;
+  }
+}
+
+@keyframes candle-live {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  20% { transform: scale(0.97, 1.04) skewX(-1.5deg); }
+  40% { transform: scale(1.02, 0.97) skewX(1deg); }
+  55% { transform: scale(0.98, 1.06) skewX(-0.8deg); }
+  75% { transform: scale(1.01, 0.98) skewX(1.8deg); }
+  90% { transform: scale(0.99, 1.02) skewX(-1deg); }
+}
+
+@keyframes candle-flicker {
+  0%, 100% { opacity: 1; }
+  22% { opacity: 0.86; }
+  41% { opacity: 0.96; }
+  63% { opacity: 0.82; }
+  80% { opacity: 0.93; }
+}
+
+@keyframes candle-smoke {
+  0% { stroke-dashoffset: 70; opacity: 0; }
+  12% { opacity: 1; }
+  100% { stroke-dashoffset: -70; opacity: 0; }
+}
+
+@keyframes candle-ember-fade {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
+@keyframes candle-ember-glow {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes dust-drift-a {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 0.85; }
+  50% { transform: translate(14px, -22px); opacity: 0.45; }
+  85% { opacity: 0.75; }
+  100% { transform: translate(-8px, -46px); opacity: 0; }
+}
+
+@keyframes dust-drift-b {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.7; }
+  55% { transform: translate(-16px, -14px); opacity: 0.9; }
+  100% { transform: translate(6px, -38px); opacity: 0; }
 }
