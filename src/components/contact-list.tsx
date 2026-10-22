@@ -12,9 +12,7 @@ import { Avatar } from "@/components/avatar";
 import { LoneCandle } from "@/components/lone-candle";
 import { ShowMoreButton } from "@/components/show-more-button";
 import { countContacts, listContacts } from "@/lib/data";
-import { formatNumber, pluralize } from "@/lib/format";
-
-const CONTACT_FORMS: [string, string, string] = ["контакт", "контакта", "контактов"];
+import { CONTACT_FORMS, formatNumber, pluralize } from "@/lib/format";
 
 // Contacts shown on open and added by each "Показать ещё" click
 const PAGE_SIZE = 50;
@@ -25,9 +23,11 @@ function parseLimit(value: string | string[] | undefined) {
   return Math.max(Number(value), PAGE_SIZE);
 }
 
-function showMoreHref(query: string, limit: number) {
+// Keeps ?due=all, so the "Пора связаться" block above stays expanded
+function showMoreHref(query: string, limit: number, dueAll: boolean) {
   const params = new URLSearchParams();
   if (query) params.set("q", query);
+  if (dueAll) params.set("due", "all");
   params.set("limit", String(limit));
   return `/?${params}`;
 }
@@ -37,7 +37,7 @@ export async function ContactList({
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
-  const { q, limit: limitParam } = await searchParams;
+  const { q, limit: limitParam, due } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const limit = parseLimit(limitParam);
   const [rows, total, matched] = await Promise.all([
@@ -130,7 +130,10 @@ export async function ContactList({
 
       {hasMore && (
         <div className="mt-3 flex justify-center">
-          <ShowMoreButton href={showMoreHref(query, rows.length + PAGE_SIZE)} />
+          <ShowMoreButton
+            href={showMoreHref(query, rows.length + PAGE_SIZE, due === "all")}
+            label="Показать ещё"
+          />
         </div>
       )}
     </div>
