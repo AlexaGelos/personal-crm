@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 
 const SHOW_MS = 8000;
 
-// Confirms a deleted contact above the list. The name comes in ?deleted=;
-// the message hides together with the parameter, so reload and "Back" don't bring it back.
+// Confirms a deleted contact at the top of the page, above "Пора связаться".
+// The name comes in ?deleted=; the message hides together with the parameter,
+// so reload and "Back" don't bring it back.
 // While the message is on the page (`data-deleted-notice`), all candles go out and the room
 // goes dark; they light up again when the message goes away - see globals.css.
 export function DeletedContactNotice() {
