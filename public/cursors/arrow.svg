@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Gothic mouse arrow: a lancet head with curved barbs and a pierced quatrefoil at the end.
+       The tip is at 4,4: the hotspot in globals.css. Drawn pointing down, then turned. -->
+  <defs>
+    <g id="arrow">
+      <path d="M0 0C1.3 3.4 4.4 7.6 6.2 13.6C4.6 12.2 3 11.4 1.4 11.3V17H-1.4V11.3C-3 11.4 -4.6 12.2 -6.2 13.6C-4.4 7.6 -1.3 3.4 0 0Z" />
+      <circle cy="18.3" r="1.5" />
+      <circle cy="22.1" r="1.5" />
+      <circle cx="1.9" cy="20.2" r="1.5" />
+      <circle cx="-1.9" cy="20.2" r="1.5" />
+    </g>
+  </defs>
+  <g transform="translate(4 4) rotate(-27)">
+    <!-- The outline first and the fill on top: one clean contour around all the parts -->
+    <use href="#arrow" fill="none" stroke="#0a0807" stroke-width="2" stroke-linejoin="round" />
+    <use href="#arrow" fill="#e3dbcf" />
+    <circle cy="20.2" r="0.7" fill="#0a0807" />
+    <path d="M0 3V11" stroke="#7d1a26" stroke-width="1.1" stroke-linecap="round" />
+  </g>
+</svg>
