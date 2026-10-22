@@ -361,6 +361,61 @@
     background-image: var(--grain);
     background-size: 200px 200px;
   }
+
+  /*
+    The little demon running over the home page (src/components/running-demon.tsx).
+    The script sets its pose: standing, running or in the air. Limbs, the tail and the
+    flame on it are drawn from their joint, so they turn around it.
+  */
+  .demon-leg,
+  .demon-arm,
+  .demon-fire {
+    transition: rotate 0.2s ease-out;
+  }
+
+  /* Standing, the far leg is a step behind */
+  .demon-leg.demon-far {
+    rotate: 14deg;
+  }
+
+  [data-pose="stand"] .demon-tail {
+    animation: demon-tail 2.6s ease-in-out infinite;
+  }
+
+  [data-pose="run"] .demon-leg {
+    animation: demon-stride 0.36s linear infinite;
+  }
+
+  [data-pose="run"] .demon-arm {
+    animation: demon-swing 0.36s linear infinite;
+  }
+
+  [data-pose="run"] .demon-far {
+    animation-delay: -0.18s;
+  }
+
+  [data-pose="run"] .demon-body {
+    animation: demon-bob 0.18s ease-in-out infinite;
+  }
+
+  /* In the air: legs tucked, arms up */
+  [data-pose="jump"] .demon-leg {
+    rotate: -45deg;
+  }
+
+  [data-pose="jump"] .demon-leg.demon-far {
+    rotate: 35deg;
+  }
+
+  [data-pose="jump"] .demon-arm {
+    rotate: -75deg;
+  }
+
+  /* On the move the flame on the tail leans back */
+  [data-pose="run"] .demon-fire,
+  [data-pose="jump"] .demon-fire {
+    rotate: -35deg;
+  }
 }
 
 /*
@@ -453,7 +508,11 @@ body:has([data-doorway]) .layout-sconce {
   .candle-light,
   .candle-smoke-idle,
   .candle-ember-idle,
-  .dust-mote {
+  .dust-mote,
+  .demon-tail,
+  .demon-leg,
+  .demon-arm,
+  .demon-body {
     animation: none;
   }
 
@@ -513,4 +572,24 @@ body:has([data-doorway]) .layout-sconce {
   20% { opacity: 0.7; }
   55% { transform: translate(-16px, -14px); opacity: 0.9; }
   100% { transform: translate(6px, -38px); opacity: 0; }
+}
+
+@keyframes demon-stride {
+  0%, 100% { rotate: 32deg; }
+  50% { rotate: -32deg; }
+}
+
+@keyframes demon-swing {
+  0%, 100% { rotate: -40deg; }
+  50% { rotate: 25deg; }
+}
+
+@keyframes demon-bob {
+  0%, 50%, 100% { translate: 0 0; }
+  25%, 75% { translate: 0 -0.8px; }
+}
+
+@keyframes demon-tail {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: 8deg; }
 }
