@@ -13,7 +13,8 @@ export function Candlelight() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-160 overflow-hidden">
       {/* The light, stone and dust sit in `snuff-light` wrappers: after a contact is deleted the
-          candles go out and the room goes dark. The flicker animates the light itself. */}
+          candles go out and the room goes dark, after "Связались" the candles flare up and the
+          room grows lighter. The flicker animates the light itself. */}
       <div className="snuff-light">
         <div className="candle-light absolute -top-38 left-1/2 hidden h-130 w-180 -translate-x-1/2 rounded-full bg-(image:--glow-chandelier) md:block" />
         <div className="candle-light absolute -top-24 -right-30 h-95 w-100 rounded-full bg-(image:--glow-chandelier) md:hidden" />

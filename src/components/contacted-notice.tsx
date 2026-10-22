@@ -78,8 +78,9 @@ export function useContactedMark() {
   };
 }
 
-// "Отмечено: <имя>" after "Связались". The same frame as the "contact deleted" message,
-// but without `data-deleted-notice`: the candles keep burning
+// "Отмечено: <имя>" after "Связались". The same frame as the "contact deleted" message.
+// While it is on the page (`data-contacted-notice`), all candles flare up and the room
+// grows lighter; they calm down again when the message goes away - see globals.css.
 export function ContactedNotice({
   name,
   error,
@@ -97,6 +98,7 @@ export function ContactedNotice({
     <div className="flex flex-col gap-2">
       <div
         role="status"
+        data-contacted-notice
         className="flex items-center gap-2.5 rounded-inner border border-mourning-line bg-popover py-1 pr-1 pl-3.5 text-[0.9375rem] shadow-mourning sm:gap-3 sm:pl-4"
       >
         <LitCandleIcon />
