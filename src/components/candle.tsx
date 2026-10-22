@@ -94,8 +94,9 @@ type CandleProps = {
   /** Draw a wax drip down the right or left side */
   drip?: "left" | "right";
   /**
-   * Every candle goes out while the "contact deleted" message is shown (see globals.css):
-   * after this many seconds, so the candles in a room go out in a wave
+   * Every candle goes out while the "contact deleted" message is shown and flares up while
+   * the "Отмечено" message is shown (see globals.css): after this many seconds, so the
+   * candles in a room change in a wave
    */
   snuffDelay?: number;
 };
@@ -147,6 +148,8 @@ export function Candle({
             fill={`url(#${id}-halo)`}
             style={{ animationDuration: timing.halo, animationDelay: timing.haloDelay }}
           />
+          {/* Hidden while the candle burns as usual: a second halo when the candle flares up */}
+          <circle className="candle-flare" cy={-12 * flameScale} r={26 * flameScale} fill={`url(#${id}-halo)`} />
         </g>
         <g className="candle-fire">
           <g
@@ -154,6 +157,12 @@ export function Candle({
             style={{ animationDuration: timing.flame, animationDelay: timing.flameDelay }}
           >
             <use href={`#${id}-fx`} transform={flameScale === 1 ? undefined : `scale(${flameScale})`} />
+            {/* A second flame on top makes a flared-up fire denser and brighter */}
+            <use
+              className="candle-flare"
+              href={`#${id}-fx`}
+              transform={flameScale === 1 ? undefined : `scale(${flameScale})`}
+            />
           </g>
         </g>
         {/* Hidden while the candle burns: the glowing wick end and smoke once it goes out */}

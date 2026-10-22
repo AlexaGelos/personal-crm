@@ -267,6 +267,17 @@
     background-image: var(--glow-candle);
   }
 
+  /* The same light once more on top: the light on the walls grows stronger while candles flare up */
+  .candle-light::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: inherit;
+    opacity: 0;
+    transition: opacity 1.4s ease-in 0.3s;
+  }
+
   /*
     Every candle can go out: the fire shrinks away and smoke rises. Each candle waits
     its own --snuff-delay, so the candles of a room go out (and light up) in a wave.
@@ -280,7 +291,20 @@
   }
 
   .candle-glow {
-    transition: opacity 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s));
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    transition:
+      opacity 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s)),
+      transform 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s));
+  }
+
+  /* The second flame and halo of a flared-up candle; not drawn at all the rest of the time */
+  .candle-flare {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s)),
+      visibility 0.9s ease-in calc(0.25s + var(--snuff-delay, 0s));
   }
 
   .candle-smoke {
@@ -356,6 +380,51 @@ body:has([data-deleted-notice]) .candle-ember {
 
 body:has([data-deleted-notice]) .snuff-light {
   opacity: 0.12;
+}
+
+/*
+  All candles flare up while the "Отмечено" message is on the page after "Связались"
+  and calm down when the message goes away: the flames shoot up taller and brighter in
+  the same wave, the halos widen, the light on the walls grows stronger and the stone
+  shows more. These rules go after the delete ones: when both messages are on the page,
+  "Связались" was pressed later, so the candles flare up and there is no smoke.
+*/
+body:has([data-contacted-notice]) .candle-fire {
+  opacity: 1;
+  transform: scale(1.18, 1.55);
+  transition:
+    opacity 0.6s ease-out calc(0.1s + var(--snuff-delay, 0s)),
+    transform 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) calc(0.1s + var(--snuff-delay, 0s));
+}
+
+body:has([data-contacted-notice]) .candle-glow {
+  opacity: 1;
+  transform: scale(1.45);
+  transition:
+    opacity 0.6s ease-out calc(0.1s + var(--snuff-delay, 0s)),
+    transform 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) calc(0.1s + var(--snuff-delay, 0s));
+}
+
+body:has([data-contacted-notice]) .candle-flare {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.6s ease-out calc(0.1s + var(--snuff-delay, 0s)),
+    visibility 0s linear calc(0.1s + var(--snuff-delay, 0s));
+}
+
+body:has([data-contacted-notice]) .candle-smoke,
+body:has([data-contacted-notice]) .candle-ember {
+  animation: none;
+}
+
+body:has([data-contacted-notice]) .snuff-light {
+  opacity: 1;
+}
+
+body:has([data-contacted-notice]) .candle-light::after {
+  opacity: 1;
+  transition: opacity 0.8s ease-out 0.15s;
 }
 
 .snuff-light {
