@@ -24,6 +24,11 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
         </Button>
       </div>
 
+      {/* Above "Пора связаться": on phones the block fills the screen, a message below it is out of sight */}
+      <Suspense fallback={null}>
+        <DeletedContactNotice />
+      </Suspense>
+
       {/* No placeholder: most of the time there is no block, a placeholder would only flicker */}
       <Suspense fallback={null}>
         <KeepInTouch searchParams={searchParams} />
@@ -31,10 +36,6 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
 
       <Suspense fallback={<SearchBoxFallback />}>
         <SearchBox />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <DeletedContactNotice />
       </Suspense>
 
       <Suspense fallback={<ContactListSkeleton />}>
