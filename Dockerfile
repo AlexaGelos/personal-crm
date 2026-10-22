@@ -15,7 +15,7 @@ RUN STANDALONE_BUILD=1 pnpm build
 
 # Migrations and seeding run outside Next.js: compile them to plain JS and put
 # their only two dependencies next to them
-RUN pnpm exec tsc src/db/migrate.ts src/db/seed.ts \
+RUN pnpm exec tsc src/db/migrate.ts src/db/seed.ts src/db/seed-dante.ts \
       --outDir tools/db --module nodenext --target es2022 --skipLibCheck --types node \
  && mkdir tools/node_modules \
  && cp -rL node_modules/drizzle-orm node_modules/postgres tools/node_modules/
@@ -38,5 +38,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 
-# Migrations: node tools/db/migrate.js   Test data: node tools/db/seed.js
+# Migrations: node tools/db/migrate.js   Test data: node tools/db/seed.js, node tools/db/seed-dante.js
 CMD ["node", "server.js"]
