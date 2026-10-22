@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Candlelight } from "@/components/candlelight";
 import { Chandelier } from "@/components/chandelier";
+import { CursorLight } from "@/components/cursor-light";
 import { DemonHead } from "@/components/demon-head";
 import { Logo } from "@/components/logo";
 import { SideFlames } from "@/components/side-flames";
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="relative flex min-h-full flex-col bg-(image:--glow-page) bg-no-repeat">
         <SideFlames />
         <Candlelight />
+        <CursorLight />
         {/* Film grain over everything, like an old photograph */}
         <div aria-hidden className="film-grain pointer-events-none fixed inset-0 z-40 opacity-6" />
         <header className="border-b">

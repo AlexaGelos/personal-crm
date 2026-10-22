@@ -28,6 +28,8 @@ WORKDIR /app
 # The app writes its cache into .next, so it belongs to the unprivileged "node" user
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# Files served as they are (the mouse cursors); the standalone build leaves them out
+COPY --from=build /app/public ./public
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/tools ./tools
 
