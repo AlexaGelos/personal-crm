@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { ContactList, ContactListSkeleton } from "@/components/contact-list";
 import { DeletedContactNotice } from "@/components/deleted-contact-notice";
 import { KeepInTouch } from "@/components/keep-in-touch";
+import { RunningDemon } from "@/components/running-demon";
 import { SearchBox, SearchBoxFallback } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
 
@@ -41,6 +42,8 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
       <Suspense fallback={<ContactListSkeleton />}>
         <ContactList searchParams={searchParams} />
       </Suspense>
+
+      <RunningDemon />
     </div>
   );
 }

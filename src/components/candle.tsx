@@ -112,7 +112,6 @@ export function Candle({
   drip,
   snuffDelay = 0,
 }: CandleProps) {
-  const timing = RHYTHMS[rhythm];
   const left = x - width / 2;
   const dripX = drip === "left" ? left + 1.3 : left + width - 1.3;
 
@@ -140,56 +139,70 @@ export function Candle({
         strokeLinecap="round"
       />
       <g transform={`translate(${x} ${top - 1})`}>
-        <g className="candle-glow">
-          <circle
-            className="candle-halo"
-            cy={-12 * flameScale}
-            r={26 * flameScale}
-            fill={`url(#${id}-halo)`}
-            style={{ animationDuration: timing.halo, animationDelay: timing.haloDelay }}
-          />
-          {/* Hidden while the candle burns as usual: a second halo when the candle flares up */}
-          <circle className="candle-flare" cy={-12 * flameScale} r={26 * flameScale} fill={`url(#${id}-halo)`} />
-        </g>
-        <g className="candle-fire">
-          <g
-            className="candle-flame"
-            style={{ animationDuration: timing.flame, animationDelay: timing.flameDelay }}
-          >
-            <use href={`#${id}-fx`} transform={flameScale === 1 ? undefined : `scale(${flameScale})`} />
-            {/* A second flame on top makes a flared-up fire denser and brighter */}
-            <use
-              className="candle-flare"
-              href={`#${id}-fx`}
-              transform={flameScale === 1 ? undefined : `scale(${flameScale})`}
-            />
-          </g>
-        </g>
-        {/* Hidden while the candle burns: the glowing wick end and smoke once it goes out */}
-        <g transform={flameScale === 1 ? undefined : `scale(${flameScale})`}>
-          <circle className="candle-ember" cx={1.1} cy={-3} r={1.6} style={{ fill: "var(--ember)" }} />
-          <path
-            className="candle-smoke"
-            d="M1 -3C-2.5 -10 4.5 -16 0.5 -24C-3 -31 3.5 -37 0 -46C-2.5 -53 2 -59 0.5 -65"
-            fill="none"
-            style={{ stroke: "var(--smoke)" }}
-            strokeWidth={2.4}
-            strokeLinecap="round"
-            filter={`url(#${id}-smoke)`}
-          />
-          <path
-            className="candle-smoke candle-smoke-late"
-            d="M1 -3C4 -11 -2.5 -17 1.5 -26C4.5 -34 -1.5 -41 2 -51C4 -57 -0.5 -62 1 -69"
-            fill="none"
-            style={{ stroke: "var(--smoke)" }}
-            strokeOpacity={0.8}
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            filter={`url(#${id}-smoke)`}
-          />
-        </g>
+        <CandleFlame id={id} flameScale={flameScale} rhythm={rhythm} />
       </g>
     </g>
+  );
+}
+
+type CandleFlameProps = {
+  /** Same id as the drawing's <CandleDefs> */
+  id: string;
+  flameScale?: number;
+  rhythm?: Rhythm;
+};
+
+// The fire of a candle with its base at 0,0: halo and flame, and the glowing wick end and
+// smoke once it goes out. It goes out and flares up with all the candles after the
+// `--snuff-delay` set around it (see `snuffDelay` of <Candle>)
+export function CandleFlame({ id, flameScale = 1, rhythm = 0 }: CandleFlameProps) {
+  const timing = RHYTHMS[rhythm];
+  const scale = flameScale === 1 ? undefined : `scale(${flameScale})`;
+
+  return (
+    <>
+      <g className="candle-glow">
+        <circle
+          className="candle-halo"
+          cy={-12 * flameScale}
+          r={26 * flameScale}
+          fill={`url(#${id}-halo)`}
+          style={{ animationDuration: timing.halo, animationDelay: timing.haloDelay }}
+        />
+        {/* Hidden while the candle burns as usual: a second halo when the candle flares up */}
+        <circle className="candle-flare" cy={-12 * flameScale} r={26 * flameScale} fill={`url(#${id}-halo)`} />
+      </g>
+      <g className="candle-fire">
+        <g className="candle-flame" style={{ animationDuration: timing.flame, animationDelay: timing.flameDelay }}>
+          <use href={`#${id}-fx`} transform={scale} />
+          {/* A second flame on top makes a flared-up fire denser and brighter */}
+          <use className="candle-flare" href={`#${id}-fx`} transform={scale} />
+        </g>
+      </g>
+      {/* Hidden while the candle burns: the glowing wick end and smoke once it goes out */}
+      <g transform={scale}>
+        <circle className="candle-ember" cx={1.1} cy={-3} r={1.6} style={{ fill: "var(--ember)" }} />
+        <path
+          className="candle-smoke"
+          d="M1 -3C-2.5 -10 4.5 -16 0.5 -24C-3 -31 3.5 -37 0 -46C-2.5 -53 2 -59 0.5 -65"
+          fill="none"
+          style={{ stroke: "var(--smoke)" }}
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          filter={`url(#${id}-smoke)`}
+        />
+        <path
+          className="candle-smoke candle-smoke-late"
+          d="M1 -3C4 -11 -2.5 -17 1.5 -26C4.5 -34 -1.5 -41 2 -51C4 -57 -0.5 -62 1 -69"
+          fill="none"
+          style={{ stroke: "var(--smoke)" }}
+          strokeOpacity={0.8}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          filter={`url(#${id}-smoke)`}
+        />
+      </g>
+    </>
   );
 }
 
