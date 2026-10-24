@@ -382,20 +382,21 @@
     animation: demon-tail 2.6s ease-in-out infinite;
   }
 
+  /* It goes at a walk: the step keeps pace with RUN_SPEED in the script */
   [data-pose="run"] .demon-leg {
-    animation: demon-stride 0.36s linear infinite;
+    animation: demon-stride 0.72s linear infinite;
   }
 
   [data-pose="run"] .demon-arm {
-    animation: demon-swing 0.36s linear infinite;
+    animation: demon-swing 0.72s linear infinite;
   }
 
   [data-pose="run"] .demon-far {
-    animation-delay: -0.18s;
+    animation-delay: -0.36s;
   }
 
   [data-pose="run"] .demon-body {
-    animation: demon-bob 0.18s ease-in-out infinite;
+    animation: demon-bob 0.36s ease-in-out infinite;
   }
 
   /* In the air: legs tucked, arms up */
