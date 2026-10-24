@@ -36,11 +36,24 @@ const ponomar = Ponomar({
 });
 
 export const metadata: Metadata = {
+  // Full addresses in the link preview; the picture is app/opengraph-image.jpg
+  metadataBase: new URL("https://app.crmgelos.ru"),
   title: {
     default: "Личная CRM",
     template: "%s · Личная CRM",
   },
   description: "Контакты людей, которых я знаю лично",
+  // Link preview in messengers and social networks, the same on every page
+  openGraph: {
+    type: "website",
+    siteName: "Личная CRM",
+    locale: "ru_RU",
+    title: "Личная CRM",
+    description: "Контакты людей, которых я знаю лично",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
