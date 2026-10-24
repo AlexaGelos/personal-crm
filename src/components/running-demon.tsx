@@ -12,11 +12,13 @@ const UNIT = SIZE / 32;
 const FOOT_X = 21 * UNIT;
 const FOOT_Y = 32 * UNIT;
 
-// How it moves, in px and ms
-const RUN_SPEED = 0.14;
+// How it moves, in px and ms: at a walk, with long rests
+const RUN_SPEED = 0.07;
 const MIN_JUMP = 50;
 const MAX_JUMP = 420;
-const PAUSE_MS = [400, 2500] as const;
+const PAUSE_MS = [3000, 8000] as const;
+// After a rest, the odds of a walk along the same inscription rather than a jump to another
+const RUN_CHANCE = 0.65;
 // Gives the contact list time to load before the demon comes in
 const START_MS = 1200;
 // Nothing to stand on, or nowhere to run from the cursor: tries again after this long
@@ -116,16 +118,17 @@ function landings(): Landing[] {
   return found;
 }
 
-// A little demon with a flame on the tip of its tail, on the home page only. It runs
-// along inscriptions and jumps between them at random, keeps away from the cursor
-// (on a touch screen, from the finger) and catches no clicks. The flame goes out and
-// flares up with all the candles. With reduced motion it sits on the page heading.
+// A little demon with a flame on the tip of its tail, on the home page only and only
+// with a mouse: none on phones and tablets. It rests on inscriptions, walks along them
+// and now and then jumps to another one, keeps away from the cursor (on a touch screen
+// too, from the finger) and catches no clicks. The flame goes out and flares up with
+// all the candles. With reduced motion it sits on the page heading.
 export function RunningDemon() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const demon = ref.current;
-    if (!demon) return;
+    if (!demon || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     let move: Move = { kind: "away", until: performance.now() + START_MS };
@@ -288,9 +291,9 @@ export function RunningDemon() {
       }
 
       if (move.kind !== "stand" || now < move.until) return;
-      // Now and then a run along the same inscription, otherwise a jump to another one
+      // Mostly a walk along the same inscription, otherwise a jump to another one
       offset = Math.min(Math.max(offset, EDGE), box.width - EDGE);
-      if (box.width > 60 && Math.random() < 0.4) {
+      if (box.width > 60 && Math.random() < RUN_CHANCE) {
         const to = randomIn(EDGE, box.width - EDGE);
         const nearCursor = cursor && distance({ x: box.left + to, y: point.y }, cursor) < SAFE_RADIUS;
         if (Math.abs(to - offset) > 24 && !nearCursor) {
