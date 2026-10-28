@@ -1,9 +1,11 @@
 import "server-only";
 
 import {
+  and,
   asc,
   desc,
   eq,
+  exists,
   getTableColumns,
   gt,
   ilike,
@@ -14,7 +16,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/db";
-import { contacts, notes } from "@/db/schema";
+import { contactGroups, contacts, groups, notes } from "@/db/schema";
 import { appTimeZone } from "@/lib/format";
 
 function escapeLike(value: string) {
@@ -51,7 +53,27 @@ function searchCondition(query: string): SQL | undefined {
   return or(...conditions);
 }
 
-export async function listContacts(query: string, limit: number) {
+// Only the contacts of the group; without a group - no condition
+function groupCondition(groupId: number | undefined): SQL | undefined {
+  if (groupId === undefined) return undefined;
+
+  return exists(
+    db
+      .select({ one: sql`1` })
+      .from(contactGroups)
+      .where(and(eq(contactGroups.contactId, contacts.id), eq(contactGroups.groupId, groupId))),
+  );
+}
+
+export async function listContacts({
+  query,
+  limit,
+  groupId,
+}: {
+  query: string;
+  limit: number;
+  groupId?: number;
+}) {
   return db
     .select({
       id: contacts.id,
@@ -59,16 +81,25 @@ export async function listContacts(query: string, limit: number) {
       about: contacts.about,
       phone: contacts.phone,
       email: contacts.email,
+      // All groups of the contact, not only the selected one. A query builder, not plain columns
+      // in sql``: in a select from one table Drizzle drops the table names, and "id" would be ambiguous
+      groupNames: sql<string[]>`array(${db
+        .select({ name: groups.name })
+        .from(contactGroups)
+        .innerJoin(groups, eq(groups.id, contactGroups.groupId))
+        .where(eq(contactGroups.contactId, contacts.id))
+        .orderBy(asc(groups.name), asc(groups.id))})`,
     })
     .from(contacts)
-    .where(searchCondition(query))
+    .where(and(searchCondition(query), groupCondition(groupId)))
     .orderBy(asc(contacts.name), asc(contacts.id))
     .limit(limit);
 }
 
-// Counts contacts matching the query; an empty query counts all of them
-export async function countContacts(query = "") {
-  return db.$count(contacts, searchCondition(query));
+// Counts contacts matching the query, in the group if there is one;
+// an empty query counts all of them
+export async function countContacts(query = "", groupId?: number) {
+  return db.$count(contacts, and(searchCondition(query), groupCondition(groupId)));
 }
 
 // When it's time to get in touch, counted by the database for the card and the home block alike.
@@ -108,9 +139,10 @@ export async function getContact(id: number) {
   return contact;
 }
 
-// Overdue contacts, the most overdue first; without a limit - all of them.
-// Every row also carries the number of all overdue contacts
-export async function listOverdueContacts(limit?: number) {
+// Overdue contacts, the most overdue first; without a limit - all of them. With a group - only
+// the contacts of that group. Every row also carries the number of all overdue contacts
+// (of the group, if there is one)
+export async function listOverdueContacts(limit?: number, groupId?: number) {
   const { overdueDays } = keepInTouchFields();
   const due = db
     .select({
@@ -121,7 +153,7 @@ export async function listOverdueContacts(limit?: number) {
       overdueDays: overdueDays.as("overdue_days"),
     })
     .from(contacts)
-    .where(isNotNull(contacts.contactFrequency))
+    .where(and(isNotNull(contacts.contactFrequency), groupCondition(groupId)))
     .as("due");
 
   const query = db

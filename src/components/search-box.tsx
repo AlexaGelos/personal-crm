@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 const DEBOUNCE_MS = 250;
 const PLACEHOLDER = "Поиск по имени, телефону или почте";
 
-// Live search: updates ?q= in the URL while the user types
+// Live search: updates ?q= in the URL while the user types; ?group= stays as it is
 export function SearchBox() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q") ?? "";
+  // The chosen group stays while typing
+  const urlGroup = searchParams.get("group");
 
   const [value, setValue] = useState(urlQuery);
   const [syncedQuery, setSyncedQuery] = useState(urlQuery);
@@ -50,9 +52,11 @@ export function SearchBox() {
       const query = next.trim();
       setSentQuery(query);
       startTransition(() => {
-        router.replace(query ? `/?q=${encodeURIComponent(query)}` : "/", {
-          scroll: false,
-        });
+        const params = new URLSearchParams();
+        if (urlGroup) params.set("group", urlGroup);
+        if (query) params.set("q", query);
+        const search = params.toString();
+        router.replace(search ? `/?${search}` : "/", { scroll: false });
       });
     }, DEBOUNCE_MS);
   }

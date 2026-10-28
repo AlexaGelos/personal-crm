@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getContact, listNotes } from "@/lib/data";
+import { listContactGroups } from "@/lib/groups";
 import { formatDate, formatDateTime, formatDay, formatOverdue, pluralize } from "@/lib/format";
 import { parseContactId } from "@/lib/validation";
 
@@ -46,7 +47,11 @@ async function ContactDetails({
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
-  const [contact, notes] = await Promise.all([getContact(id), listNotes(id)]);
+  const [contact, notes, groups] = await Promise.all([
+    getContact(id),
+    listNotes(id),
+    listContactGroups(id),
+  ]);
   if (!contact) notFound();
 
   return (
@@ -105,6 +110,23 @@ async function ContactDetails({
                 >
                   {contact.email}
                 </a>
+              )}
+            </Detail>
+            <Detail label="Группы">
+              {groups.length > 0 && (
+                <span className="break-words">
+                  {groups.map((group, index) => (
+                    <span key={group.id}>
+                      {index > 0 && ", "}
+                      <Link
+                        href={`/?group=${group.id}`}
+                        className="text-rose underline-offset-4 hover:underline"
+                      >
+                        {group.name}
+                      </Link>
+                    </span>
+                  ))}
+                </span>
               )}
             </Detail>
             <Detail label="В списке с">{formatDate(contact.createdAt)}</Detail>

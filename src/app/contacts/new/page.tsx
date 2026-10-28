@@ -1,9 +1,11 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 import { createContact } from "@/app/actions";
 import { BackLink } from "@/components/back-link";
 import { ContactForm } from "@/components/contact-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { listGroups } from "@/lib/groups";
 
 export const metadata: Metadata = {
   title: "Новый контакт",
@@ -20,9 +22,35 @@ export default function NewContactPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ContactForm action={createContact} submitLabel="Добавить контакт" cancelHref="/" />
+          <Suspense fallback={<FormSkeleton />}>
+            <NewContactForm />
+          </Suspense>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// The groups to choose from come from the database, so the form waits for them inside Suspense
+async function NewContactForm() {
+  const groups = await listGroups();
+
+  return (
+    <ContactForm
+      action={createContact}
+      groups={groups}
+      submitLabel="Добавить контакт"
+      cancelHref="/"
+    />
+  );
+}
+
+function FormSkeleton() {
+  return (
+    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Загружаем форму">
+      {Array.from({ length: 4 }, (_, i) => (
+        <div key={i} className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
+      ))}
     </div>
   );
 }

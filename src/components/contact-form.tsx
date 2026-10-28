@@ -3,6 +3,7 @@
 import { useActionState, useId, useLayoutEffect, useState } from "react";
 import Link from "next/link";
 
+import { GroupPicker, type GroupOption } from "@/components/group-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +12,14 @@ import {
   emptyContactFields,
   type ContactFields,
   type ContactFormState,
+  type ContactFormValues,
 } from "@/lib/validation";
 
 type ContactFormProps = {
   action: (state: ContactFormState, formData: FormData) => Promise<ContactFormState>;
-  defaults?: ContactFields;
+  defaults?: ContactFormValues;
+  // All groups to choose from
+  groups: GroupOption[];
   submitLabel: string;
   cancelHref: string;
 };
@@ -31,6 +35,7 @@ export function ContactForm(props: ContactFormProps) {
 function ContactFormFields({
   action,
   defaults = emptyContactFields,
+  groups,
   submitLabel,
   cancelHref,
 }: ContactFormProps) {
@@ -89,6 +94,13 @@ function ContactFormFields({
           placeholder="name@example.com"
         />
       </div>
+
+      <GroupPicker
+        groups={groups}
+        initialIds={values.groupIds}
+        initialNewNames={values.newGroupNames}
+        serverError={errors.newGroupNames?.[0]}
+      />
 
       {/* Phones: buttons stacked full width - side by side they do not fit */}
       <div className="mt-1 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">

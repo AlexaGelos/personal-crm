@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 
 import { ContactList, ContactListSkeleton } from "@/components/contact-list";
 import { DeletedContactNotice } from "@/components/deleted-contact-notice";
+import { GroupFilter } from "@/components/group-filter";
 import { KeepInTouch } from "@/components/keep-in-touch";
 import { RunningDemon } from "@/components/running-demon";
 import { SearchBox, SearchBoxFallback } from "@/components/search-box";
@@ -24,6 +25,12 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
           </Link>
         </Button>
       </div>
+
+      {/* Above "Пора связаться": the chosen group filters the block and the list alike.
+          The placeholder keeps the height, so the page does not jump when the row arrives */}
+      <Suspense fallback={<div className="h-11" aria-hidden />}>
+        <GroupFilter searchParams={searchParams} />
+      </Suspense>
 
       {/* Above "Пора связаться": on phones the block fills the screen, a message below it is out of sight */}
       <Suspense fallback={null}>
