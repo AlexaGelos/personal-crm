@@ -13,11 +13,9 @@ export async function GroupFilter({
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
-  const [groups, selected, { q }] = await Promise.all([
-    listGroups(),
-    selectedGroup(searchParams),
-    searchParams,
-  ]);
+  // searchParams first: the filter renders per request, and the build never reads the database
+  const { q } = await searchParams;
+  const [groups, selected] = await Promise.all([listGroups(), selectedGroup(searchParams)]);
   const query = typeof q === "string" ? q.trim() : "";
 
   function href(groupId?: number) {

@@ -43,7 +43,9 @@ async function GroupList({
 }: {
   searchParams: PageProps<"/groups">["searchParams"];
 }) {
-  const [groups, { edit }] = await Promise.all([listGroups(), searchParams]);
+  // searchParams first: the list renders per request, and the build never reads the database
+  const { edit } = await searchParams;
+  const groups = await listGroups();
   // ?edit=<id>: this group's row is a rename form instead of a name
   const editingId = parseGroupId(edit);
 
