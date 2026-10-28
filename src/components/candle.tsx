@@ -68,12 +68,28 @@ export function CandleDefs({ id }: { id: string }) {
       </filter>
       {/* The flame, drawn with its base at 0,0 */}
       <g id={`${id}-fx`}>
-        <path d={FLAME_OUTER} style={{ fill: "var(--flame-bloom)" }} fillOpacity={0.6} filter={`url(#${id}-bloom)`} />
+        <path
+          d={FLAME_OUTER}
+          style={{ fill: "var(--flame-bloom)" }}
+          fillOpacity={0.6}
+          filter={`url(#${id}-bloom)`}
+        />
         <g filter={`url(#${id}-soft)`}>
           <path d={FLAME_OUTER} fill={`url(#${id}-flame)`} />
           <path d={FLAME_INNER} fill={`url(#${id}-core)`} />
-          <ellipse cy={-0.4} rx={1.7} ry={1.3} style={{ fill: "var(--flame-blue)" }} fillOpacity={0.45} />
-          <path d="M0 1.6C0.2 -0.4 0.5 -1.8 1 -3" fill="none" style={{ stroke: "var(--wick)" }} strokeWidth={0.7} />
+          <ellipse
+            cy={-0.4}
+            rx={1.7}
+            ry={1.3}
+            style={{ fill: "var(--flame-blue)" }}
+            fillOpacity={0.45}
+          />
+          <path
+            d="M0 1.6C0.2 -0.4 0.5 -1.8 1 -3"
+            fill="none"
+            style={{ stroke: "var(--wick)" }}
+            strokeWidth={0.7}
+          />
         </g>
       </g>
     </>
@@ -119,7 +135,14 @@ export function Candle({
     <g style={{ "--snuff-delay": `${Math.round(snuffDelay * 100) / 100}s` } as React.CSSProperties}>
       <rect x={left} y={top} width={width} height={height} rx={0.8} fill={`url(#${id}-wax)`} />
       <rect x={left} y={top} width={width} height={height} rx={0.8} fill={`url(#${id}-wax-lit)`} />
-      <ellipse cx={x} cy={top + 0.4} rx={width / 2} ry={1.2} style={{ fill: "var(--wax-top)" }} fillOpacity={0.8} />
+      <ellipse
+        cx={x}
+        cy={top + 0.4}
+        rx={width / 2}
+        ry={1.2}
+        style={{ fill: "var(--wax-top)" }}
+        fillOpacity={0.8}
+      />
       {drip && (
         <path
           d={`M${dripX} ${top + 0.5}C${dripX + 0.4} ${top + 4} ${dripX} ${top + 8} ${dripX + 0.4} ${top + 12}`}
@@ -170,10 +193,18 @@ export function CandleFlame({ id, flameScale = 1, rhythm = 0 }: CandleFlameProps
           style={{ animationDuration: timing.halo, animationDelay: timing.haloDelay }}
         />
         {/* Hidden while the candle burns as usual: a second halo when the candle flares up */}
-        <circle className="candle-flare" cy={-12 * flameScale} r={26 * flameScale} fill={`url(#${id}-halo)`} />
+        <circle
+          className="candle-flare"
+          cy={-12 * flameScale}
+          r={26 * flameScale}
+          fill={`url(#${id}-halo)`}
+        />
       </g>
       <g className="candle-fire">
-        <g className="candle-flame" style={{ animationDuration: timing.flame, animationDelay: timing.flameDelay }}>
+        <g
+          className="candle-flame"
+          style={{ animationDuration: timing.flame, animationDelay: timing.flameDelay }}
+        >
           <use href={`#${id}-fx`} transform={scale} />
           {/* A second flame on top makes a flared-up fire denser and brighter */}
           <use className="candle-flare" href={`#${id}-fx`} transform={scale} />
@@ -181,7 +212,13 @@ export function CandleFlame({ id, flameScale = 1, rhythm = 0 }: CandleFlameProps
       </g>
       {/* Hidden while the candle burns: the glowing wick end and smoke once it goes out */}
       <g transform={scale}>
-        <circle className="candle-ember" cx={1.1} cy={-3} r={1.6} style={{ fill: "var(--ember)" }} />
+        <circle
+          className="candle-ember"
+          cx={1.1}
+          cy={-3}
+          r={1.6}
+          style={{ fill: "var(--ember)" }}
+        />
         <path
           className="candle-smoke"
           d="M1 -3C-2.5 -10 4.5 -16 0.5 -24C-3 -31 3.5 -37 0 -46C-2.5 -53 2 -59 0.5 -65"

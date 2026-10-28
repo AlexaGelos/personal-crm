@@ -65,7 +65,9 @@ test("added contact is found by name, a note written in the card is saved and se
   await page.getByRole("link", { name: "Добавить контакт" }).click();
   await page.getByRole("textbox", { name: "Имя" }).fill("Ярослава Новикова");
   await page.getByRole("textbox", { name: "Кто это" }).fill("Архитектор");
-  await page.getByRole("textbox", { name: "Откуда знакомы" }).fill("Вместе ходили в поход на Эльбрус");
+  await page
+    .getByRole("textbox", { name: "Откуда знакомы" })
+    .fill("Вместе ходили в поход на Эльбрус");
   await page.getByRole("textbox", { name: "Телефон" }).fill("+7 900 123-45-67");
   await page.getByRole("textbox", { name: "Почта" }).fill("yaroslava@example.com");
   await page.getByRole("button", { name: "Добавить контакт" }).click();

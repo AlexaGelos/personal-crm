@@ -5,11 +5,7 @@ import { cn } from "cn";
 
 import { Button } from "@/components/ui/button";
 import { frequencyLabels } from "@/lib/format";
-import {
-  frequencyChoices,
-  type FrequencyChoice,
-  type FrequencyFormState,
-} from "@/lib/validation";
+import { frequencyChoices, type FrequencyChoice, type FrequencyFormState } from "@/lib/validation";
 
 // "Как часто общаться" in the card: one press saves the choice.
 // A plain form with submit buttons, so it works before JavaScript loads, like the other forms

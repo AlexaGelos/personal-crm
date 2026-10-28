@@ -76,11 +76,7 @@ function optionalText(max: number) {
 }
 
 export const contactSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Укажите имя")
-    .max(200, "Не больше 200 символов"),
+  name: z.string().trim().min(1, "Укажите имя").max(200, "Не больше 200 символов"),
   about: optionalText(500),
   howWeMet: optionalText(1000),
   phone: optionalText(50).refine(

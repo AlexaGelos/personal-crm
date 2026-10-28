@@ -24,7 +24,9 @@ export default function GroupsPage({ searchParams }: PageProps<"/groups">) {
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">Группы</h1>
+            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">
+              Группы
+            </h1>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -38,11 +40,7 @@ export default function GroupsPage({ searchParams }: PageProps<"/groups">) {
   );
 }
 
-async function GroupList({
-  searchParams,
-}: {
-  searchParams: PageProps<"/groups">["searchParams"];
-}) {
+async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">["searchParams"] }) {
   // searchParams first: the list renders per request, and the build never reads the database
   const { edit } = await searchParams;
   const groups = await listGroups();

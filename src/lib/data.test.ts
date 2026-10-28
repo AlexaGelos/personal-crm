@@ -154,7 +154,11 @@ describe("listOverdueContacts", () => {
 
   it("counts the whole group when the list is cut by the limit", async () => {
     const tennis = await addGroup("Теннис");
-    for (const [name, days] of [["Анна", 10], ["Борис", 20], ["Вера", 30]] as const) {
+    for (const [name, days] of [
+      ["Анна", 10],
+      ["Борис", 20],
+      ["Вера", 30],
+    ] as const) {
       await addToGroup((await addOverdue(name, days)).id, tennis.id);
     }
 

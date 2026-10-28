@@ -26,7 +26,11 @@ export function DustMotes({ className }: { className?: string }) {
       {MOTES.map(({ top, left, delay, kind }) => (
         <span
           key={`${top}-${left}`}
-          className={cn("dust-mote", kind.includes("b") && "dust-mote-b", kind.includes("s") && "dust-mote-small")}
+          className={cn(
+            "dust-mote",
+            kind.includes("b") && "dust-mote-b",
+            kind.includes("s") && "dust-mote-small",
+          )}
           style={{ top: `${top}%`, left: `${left}%`, animationDelay: `${delay}s` }}
         />
       ))}

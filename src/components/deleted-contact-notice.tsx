@@ -38,7 +38,9 @@ export function DeletedContactNotice() {
       </span>
       <div className="min-w-0 flex-1 py-3">
         <p className="break-words">Контакт «{name}» удалён</p>
-        <p className="mt-1 font-gothic text-xl leading-snug text-rose">Вы сами отвечаете за своё решение</p>
+        <p className="mt-1 font-gothic text-xl leading-snug text-rose">
+          Вы сами отвечаете за своё решение
+        </p>
       </div>
       <Button type="button" variant="ghost" size="icon" onClick={hide} aria-label="Закрыть">
         <X />

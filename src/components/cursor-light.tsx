@@ -29,7 +29,9 @@ export function CursorLight() {
     };
 
     const follow = (time: number) => {
-      const share = reducedMotion.matches ? 1 : 1 - Math.exp(-Math.max(time - lastTime, 0) / LAG_MS);
+      const share = reducedMotion.matches
+        ? 1
+        : 1 - Math.exp(-Math.max(time - lastTime, 0) / LAG_MS);
       lastTime = time;
       at = { x: at.x + (target.x - at.x) * share, y: at.y + (target.y - at.y) * share };
       if (Math.abs(target.x - at.x) < 0.5 && Math.abs(target.y - at.y) < 0.5) {

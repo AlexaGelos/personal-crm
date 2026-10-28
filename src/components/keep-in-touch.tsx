@@ -39,7 +39,11 @@ export async function KeepInTouch({
 }
 
 // The same group (?group=) and list length (?limit=), with or without ?due=all
-function toggleHref(limit: string | string[] | undefined, groupId: number | undefined, expand: boolean) {
+function toggleHref(
+  limit: string | string[] | undefined,
+  groupId: number | undefined,
+  expand: boolean,
+) {
   const params = new URLSearchParams();
   if (groupId !== undefined) params.set("group", String(groupId));
   if (expand) params.set("due", "all");

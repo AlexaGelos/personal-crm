@@ -112,7 +112,14 @@ export function ContactedNotice({
         >
           Отменить
         </Button>
-        <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Закрыть" className="size-11">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="size-11"
+        >
           <X />
         </Button>
       </div>

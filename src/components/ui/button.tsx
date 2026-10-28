@@ -1,14 +1,15 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
-import { Slot } from "radix-ui"
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "cn";
+import { Slot } from "radix-ui";
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-field border border-transparent bg-clip-padding text-xs font-medium tracking-caps whitespace-nowrap uppercase transition-all duration-400 outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive-line aria-invalid:ring-3 aria-invalid:ring-destructive-line/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "border-primary-line bg-primary text-primary-foreground hover:border-primary-line-hover hover:bg-primary-hover",
+        default:
+          "border-primary-line bg-primary text-primary-foreground hover:border-primary-line-hover hover:bg-primary-hover",
         // Outline buttons warm up in candlelight on hover
         outline:
           "border-line-strong bg-transparent text-soft-foreground hover:border-glow-line hover:text-glow-text hover:shadow-glow aria-expanded:border-glow-line aria-expanded:text-glow-text",
@@ -36,8 +37,8 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Button({
   className,
@@ -47,9 +48,9 @@ function Button({
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
+    asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const Comp = asChild ? Slot.Root : "button";
 
   return (
     <Comp
@@ -59,7 +60,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
-  )
+  );
 }
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };

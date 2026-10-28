@@ -11,12 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // How often the owner wants to talk to a contact; NULL means "not set"
-export const contactFrequency = pgEnum("contact_frequency", [
-  "week",
-  "month",
-  "quarter",
-  "year",
-]);
+export const contactFrequency = pgEnum("contact_frequency", ["week", "month", "quarter", "year"]);
 
 export const contacts = pgTable("contacts", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -26,9 +21,7 @@ export const contacts = pgTable("contacts", {
   howWeMet: text("how_we_met"),
   phone: text("phone"),
   email: text("email"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   contactFrequency: contactFrequency("contact_frequency"),
   // Last press of "Связались"; NULL - never pressed
   lastContactedAt: timestamp("last_contacted_at", { withTimezone: true }),
@@ -42,9 +35,7 @@ export const notes = pgTable(
       .notNull()
       .references(() => contacts.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("notes_contact_id_idx").on(table.contactId, table.createdAt)],
 );
@@ -55,9 +46,7 @@ export const groups = pgTable(
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     // Case and "ё" / "е" do not tell names apart; the same key is built in groupNameKey()

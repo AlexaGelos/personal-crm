@@ -84,8 +84,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               snuffDelay={0.25}
               className="absolute top-11 left-1/2 hidden h-32.5 w-50 -translate-x-1/2 md:block"
             />
-            <Chandelier id="chandelier-small" bold className="absolute top-14 right-3.5 h-16.25 w-25 md:hidden" />
-            <DemonHead className="absolute left-1/2 size-10 -translate-x-1/2 text-crimson" aria-hidden />
+            <Chandelier
+              id="chandelier-small"
+              bold
+              className="absolute top-14 right-3.5 h-16.25 w-25 md:hidden"
+            />
+            <DemonHead
+              className="absolute left-1/2 size-10 -translate-x-1/2 text-crimson"
+              aria-hidden
+            />
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-5 pt-4 pb-12 md:pt-16 lg:px-10 lg:pb-20">
