@@ -6,6 +6,11 @@ import { switchToTestDatabase } from "./src/test/database-name";
 // Set here, so the web server below and the tests (e2e/database.ts) both get it
 switchToTestDatabase("e2e");
 
+// The zone the server shows dates in (TZ in deploy/compose.yaml), for the app and the tests alike:
+// the tests count the expected due dates with the app's own functions
+const TIME_ZONE = "Europe/Moscow";
+process.env.TZ = TIME_ZONE;
+
 // Not 3000: a dev server or "pnpm start" on the working database may already be there
 const PORT = 3100;
 
@@ -19,7 +24,7 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     locale: "ru-RU",
-    timezoneId: "Europe/Moscow",
+    timezoneId: TIME_ZONE,
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

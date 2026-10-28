@@ -15,8 +15,8 @@ export async function addGroup(name: string) {
   return group;
 }
 
-export async function addNote(contactId: number, body: string) {
-  const [note] = await db.insert(notes).values({ contactId, body }).returning();
+export async function addNote(contactId: number, body: string, createdAt?: Date) {
+  const [note] = await db.insert(notes).values({ contactId, body, createdAt }).returning();
   return note;
 }
 
