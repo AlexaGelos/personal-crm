@@ -14,6 +14,8 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    // The zone the server shows dates in (TZ in deploy/compose.yaml): due dates depend on it
+    env: { TZ: "Europe/Moscow" },
     // One test database for everybody: the test files run one after another
     fileParallelism: false,
     globalSetup: ["./src/test/global-setup.ts"],
