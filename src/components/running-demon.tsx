@@ -44,7 +44,15 @@ type Move =
   | { kind: "away"; until: number }
   | { kind: "stand"; until: number }
   | { kind: "run"; from: number; to: number; start: number; duration: number }
-  | { kind: "jump"; from: Point; to: Perch; offset: number; start: number; duration: number; rise: number };
+  | {
+      kind: "jump";
+      from: Point;
+      to: Perch;
+      offset: number;
+      start: number;
+      duration: number;
+      rise: number;
+    };
 
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "svg"]);
 
@@ -71,33 +79,45 @@ function perchBox({ node }: Perch): DOMRect | null {
 }
 
 function pointOn(box: DOMRect, perch: Perch, offset: number): Point {
-  return { x: box.left + Math.min(Math.max(offset, EDGE), box.width - EDGE), y: box.top + perch.sink };
+  return {
+    x: box.left + Math.min(Math.max(offset, EDGE), box.width - EDGE),
+    y: box.top + perch.sink,
+  };
 }
 
 // The whole demon is on the screen standing here
 function fits({ x, y }: Point) {
-  return x >= FOOT_X && x <= document.documentElement.clientWidth - FOOT_X && y >= SIZE && y <= window.innerHeight;
+  return (
+    x >= FOOT_X &&
+    x <= document.documentElement.clientWidth - FOOT_X &&
+    y >= SIZE &&
+    y <= window.innerHeight
+  );
 }
 
 // Inscriptions on the screen now, each with a landing point at random on it
 function landings(): Landing[] {
   const width = document.documentElement.clientWidth;
   const height = window.innerHeight;
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      if (node instanceof Text) {
-        return node.data.trim().length > 1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
-      }
-      const element = node as Element;
-      if (SKIP_TAGS.has(element.tagName) || element.getAttribute("aria-hidden") === "true") {
-        return NodeFilter.FILTER_REJECT;
-      }
-      // Nothing inside a box off the screen is on the screen; an empty box may still hold something
-      const box = element.getBoundingClientRect();
-      const off = box.bottom < 0 || box.top > height || box.right < 0 || box.left > width;
-      return box.width && box.height && off ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        if (node instanceof Text) {
+          return node.data.trim().length > 1 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        }
+        const element = node as Element;
+        if (SKIP_TAGS.has(element.tagName) || element.getAttribute("aria-hidden") === "true") {
+          return NodeFilter.FILTER_REJECT;
+        }
+        // Nothing inside a box off the screen is on the screen; an empty box may still hold something
+        const box = element.getBoundingClientRect();
+        const off = box.bottom < 0 || box.top > height || box.right < 0 || box.left > width;
+        return box.width && box.height && off ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_SKIP;
+      },
     },
-  });
+  );
 
   const seen = new Set<Node>();
   const found: Landing[] = [];
@@ -165,7 +185,15 @@ export function RunningDemon() {
       const length = distance(from, point);
       if (point.x !== from.x) facing = point.x > from.x ? 1 : -1;
       perch = null;
-      move = { kind: "jump", from, to, offset, start: now, duration: 320 + length * 0.9, rise: 16 + length * 0.2 };
+      move = {
+        kind: "jump",
+        from,
+        to,
+        offset,
+        start: now,
+        duration: 320 + length * 0.9,
+        rise: 16 + length * 0.2,
+      };
     };
 
     // Jumps to another inscription, never next to the cursor: a random one in reach, or,
@@ -173,7 +201,9 @@ export function RunningDemon() {
     const leap = (now: number, from: Point, flee = false) => {
       const cursor = handAt(now);
       const safe = landings().filter(
-        (landing) => landing.perch.node !== perch?.node && !(cursor && distance(landing.point, cursor) < SAFE_RADIUS),
+        (landing) =>
+          landing.perch.node !== perch?.node &&
+          !(cursor && distance(landing.point, cursor) < SAFE_RADIUS),
       );
       const reach = safe.filter((landing) => distance(from, landing.point) <= MAX_JUMP);
       let target: Landing | undefined;
@@ -184,7 +214,9 @@ export function RunningDemon() {
         target = pickOne(farthest.slice(0, 3));
       } else {
         const fair = reach.filter((landing) => distance(from, landing.point) >= MIN_JUMP);
-        target = fair.length ? pickOne(fair) : safe.sort((a, b) => distance(from, a.point) - distance(from, b.point))[0];
+        target = fair.length
+          ? pickOne(fair)
+          : safe.sort((a, b) => distance(from, a.point) - distance(from, b.point))[0];
       }
       if (!target) return false;
       jump(now, from, target);
@@ -218,7 +250,9 @@ export function RunningDemon() {
         return;
       }
       const cursor = handAt(now);
-      const safe = landings().filter((landing) => !(cursor && distance(landing.point, cursor) < SAFE_RADIUS));
+      const safe = landings().filter(
+        (landing) => !(cursor && distance(landing.point, cursor) < SAFE_RADIUS),
+      );
       if (!safe.length) {
         move = { kind: "away", until: now + RETRY_MS };
         return;
@@ -295,10 +329,17 @@ export function RunningDemon() {
       offset = Math.min(Math.max(offset, EDGE), box.width - EDGE);
       if (box.width > 60 && Math.random() < RUN_CHANCE) {
         const to = randomIn(EDGE, box.width - EDGE);
-        const nearCursor = cursor && distance({ x: box.left + to, y: point.y }, cursor) < SAFE_RADIUS;
+        const nearCursor =
+          cursor && distance({ x: box.left + to, y: point.y }, cursor) < SAFE_RADIUS;
         if (Math.abs(to - offset) > 24 && !nearCursor) {
           facing = to > offset ? 1 : -1;
-          move = { kind: "run", from: offset, to, start: now, duration: Math.abs(to - offset) / RUN_SPEED };
+          move = {
+            kind: "run",
+            from: offset,
+            to,
+            start: now,
+            duration: Math.abs(to - offset) / RUN_SPEED,
+          };
           return;
         }
       }
@@ -306,7 +347,8 @@ export function RunningDemon() {
     };
 
     const onMove = (event: PointerEvent) => {
-      if (event.pointerType !== "touch") hand = { x: event.clientX, y: event.clientY, until: Infinity };
+      if (event.pointerType !== "touch")
+        hand = { x: event.clientX, y: event.clientY, until: Infinity };
     };
 
     // A finger counts only for a moment: then it leaves the screen

@@ -56,8 +56,18 @@ export function Chandelier({ id, className, bold = false, snuffDelay = 0 }: Chan
       </defs>
 
       {/* Chain */}
-      <path d="M200 0V104" style={{ stroke: "var(--iron-chain)" }} strokeWidth={3.6 * w} strokeDasharray="7 3" />
-      <path d="M200 3V104" style={{ stroke: "var(--iron-link)" }} strokeWidth={1.2 * w} strokeDasharray="3 7" />
+      <path
+        d="M200 0V104"
+        style={{ stroke: "var(--iron-chain)" }}
+        strokeWidth={3.6 * w}
+        strokeDasharray="7 3"
+      />
+      <path
+        d="M200 3V104"
+        style={{ stroke: "var(--iron-link)" }}
+        strokeWidth={1.2 * w}
+        strokeDasharray="3 7"
+      />
 
       <g opacity={0.6} filter={`url(#${id}-depth)`}>
         {BACK.map(({ x, y, rhythm }) => (
@@ -84,16 +94,40 @@ export function Chandelier({ id, className, bold = false, snuffDelay = 0 }: Chan
         style={{ stroke: "var(--iron-rod)" }}
         strokeWidth={3.2 * w}
       />
-      <ellipse cx={200} cy={150} rx={168} ry={32} fill="none" stroke={`url(#${id}-iron)`} strokeWidth={6 * w} />
-      <ellipse cx={200} cy={157} rx={164} ry={31} fill="none" style={{ stroke: "var(--iron-band)" }} strokeWidth={2.4 * w} />
-      <path d="M32 148.5A168 32 0 0 0 368 148.5" fill="none" stroke={`url(#${id}-specular)`} strokeWidth={1.8 * w} />
+      <ellipse
+        cx={200}
+        cy={150}
+        rx={168}
+        ry={32}
+        fill="none"
+        stroke={`url(#${id}-iron)`}
+        strokeWidth={6 * w}
+      />
+      <ellipse
+        cx={200}
+        cy={157}
+        rx={164}
+        ry={31}
+        fill="none"
+        style={{ stroke: "var(--iron-band)" }}
+        strokeWidth={2.4 * w}
+      />
+      <path
+        d="M32 148.5A168 32 0 0 0 368 148.5"
+        fill="none"
+        stroke={`url(#${id}-specular)`}
+        strokeWidth={1.8 * w}
+      />
 
       {/* Hub and the pendant below it */}
       <ellipse cx={200} cy={103} rx={4 * w} ry={2 * w} style={{ fill: "var(--iron-collar)" }} />
       <ellipse cx={200} cy={112} rx={7 * w} ry={9 * w} fill={`url(#${id}-iron)`} />
       <path d="M200 120V186" style={{ stroke: "var(--iron-rod)" }} strokeWidth={3.2 * w} />
       <ellipse cx={200} cy={190} rx={5 * w} ry={5.5 * w} fill={`url(#${id}-iron)`} />
-      <path d={`M200 195L${200 + 3.5 * w} 208L200 230L${200 - 3.5 * w} 208Z`} fill={`url(#${id}-iron)`} />
+      <path
+        d={`M200 195L${200 + 3.5 * w} 208L200 230L${200 - 3.5 * w} 208Z`}
+        fill={`url(#${id}-iron)`}
+      />
 
       {FRONT.map(({ x, y, rhythm }) => (
         <g key={x}>

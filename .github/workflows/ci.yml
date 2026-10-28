@@ -1,0 +1,110 @@
+# Every PR into main: lint, format, types, Vitest, Playwright and the production image build.
+# main is protected: a PR merges only when all three jobs below are green
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# A new push to the same PR cancels the run for the previous one
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, format, types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm version comes from "packageManager" in package.json
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          # Same Node.js as in the Dockerfile
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Types
+        run: pnpm typecheck
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    # A throwaway database for this run only: the tests create <POSTGRES_DB>_test and
+    # <POSTGRES_DB>_e2e_test in it themselves. Not a real password: nothing else uses it
+    services:
+      db:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: personal_crm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d personal_crm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      POSTGRES_USER: ci
+      POSTGRES_PASSWORD: ci
+      POSTGRES_DB: personal_crm
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Vitest
+        run: pnpm test
+
+      - name: Install the browser for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Playwright
+        run: pnpm test:e2e
+
+      # Step-by-step recording of a failed e2e test: download it from the run page
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
+
+  image:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Built only to make sure it builds; images for the server come from deploy.yml
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

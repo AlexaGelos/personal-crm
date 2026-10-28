@@ -66,9 +66,7 @@ function parseContactForm(values: ContactFormValues) {
   return {
     errors: {
       ...(contact.success ? {} : z.flattenError(contact.error).fieldErrors),
-      ...(newGroupNames.success
-        ? {}
-        : { newGroupNames: [newGroupNames.error.issues[0].message] }),
+      ...(newGroupNames.success ? {} : { newGroupNames: [newGroupNames.error.issues[0].message] }),
     },
   };
 }
@@ -167,10 +165,7 @@ export async function addNote(
     return { body, error: parsed.error.issues[0]?.message };
   }
 
-  const [contact] = await db
-    .select({ id: contacts.id })
-    .from(contacts)
-    .where(eq(contacts.id, id));
+  const [contact] = await db.select({ id: contacts.id }).from(contacts).where(eq(contacts.id, id));
   if (!contact) {
     return { body, error: CONTACT_GONE };
   }

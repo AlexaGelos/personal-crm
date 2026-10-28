@@ -53,8 +53,20 @@ export function LoneCandle({ id, state }: { id: string; state: "unlit" | "snuffe
             strokeWidth={1.1}
             strokeLinecap="round"
           />
-          <circle className="candle-ember-idle" cx={31.6} cy={top - 4} r={4} fill={`url(#${id}-ember)`} />
-          <circle className="candle-ember-idle" cx={31.6} cy={top - 4} r={0.9} style={{ fill: "var(--ember)" }} />
+          <circle
+            className="candle-ember-idle"
+            cx={31.6}
+            cy={top - 4}
+            r={4}
+            fill={`url(#${id}-ember)`}
+          />
+          <circle
+            className="candle-ember-idle"
+            cx={31.6}
+            cy={top - 4}
+            r={0.9}
+            style={{ fill: "var(--ember)" }}
+          />
           <g transform={`translate(31.6 ${top - 5})`}>
             <path
               className="candle-smoke-idle"

@@ -142,7 +142,11 @@ function Field({ label, name, error, multiline, required, ...inputProps }: Field
     <div className="flex flex-col gap-2.5">
       <Label htmlFor={id}>
         {label}
-        {required && <span className="font-normal tracking-normal text-subtle-foreground normal-case">(обязательно)</span>}
+        {required && (
+          <span className="font-normal tracking-normal text-subtle-foreground normal-case">
+            (обязательно)
+          </span>
+        )}
       </Label>
       {multiline ? (
         <Textarea

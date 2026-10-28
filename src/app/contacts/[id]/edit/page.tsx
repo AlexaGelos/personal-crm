@@ -24,11 +24,7 @@ export default function EditContactPage({ params }: PageProps<"/contacts/[id]/ed
   );
 }
 
-async function EditContact({
-  params,
-}: {
-  params: PageProps<"/contacts/[id]/edit">["params"];
-}) {
+async function EditContact({ params }: { params: PageProps<"/contacts/[id]/edit">["params"] }) {
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
@@ -47,7 +43,9 @@ async function EditContact({
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">Изменить контакт</h1>
+            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">
+              Изменить контакт
+            </h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -77,7 +75,10 @@ function EditSkeleton() {
     <div className="flex flex-col gap-4 rounded-card border bg-card p-5 sm:p-7" aria-busy="true">
       <div className="h-8 w-56 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
+        <div
+          key={i}
+          className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer"
+        />
       ))}
     </div>
   );

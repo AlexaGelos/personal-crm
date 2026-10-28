@@ -1,7 +1,15 @@
 import { cn } from "cn";
 
 // Old stone masonry that shows only in the circle of light around a candle holder
-export function StoneWall({ id, className, offset = 0 }: { id: string; className?: string; offset?: number }) {
+export function StoneWall({
+  id,
+  className,
+  offset = 0,
+}: {
+  id: string;
+  className?: string;
+  offset?: number;
+}) {
   return (
     <svg
       aria-hidden

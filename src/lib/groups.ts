@@ -44,7 +44,12 @@ export const GROUP_GONE = "Этой группы больше нет — воз�
 // Postgres error code of a broken unique index. Drizzle keeps the original error in "cause"
 function isUniqueViolation(error: unknown) {
   const original = error instanceof Error && error.cause ? error.cause : error;
-  return typeof original === "object" && original !== null && "code" in original && original.code === "23505";
+  return (
+    typeof original === "object" &&
+    original !== null &&
+    "code" in original &&
+    original.code === "23505"
+  );
 }
 
 // Changing only the case or "ё" / "е" is fine: the index compares the row with the new value of itself
@@ -114,7 +119,10 @@ export async function setContactGroups(
     // Selected from groups, so a group deleted in another tab is skipped instead of failing the save
     await tx.insert(contactGroups).select(
       tx
-        .select({ contactId: sql<number>`${contactId}::integer`.as("contact_id"), groupId: groups.id })
+        .select({
+          contactId: sql<number>`${contactId}::integer`.as("contact_id"),
+          groupId: groups.id,
+        })
         .from(groups)
         .where(inArray(groups.id, [...ids])),
     );

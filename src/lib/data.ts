@@ -34,10 +34,7 @@ function searchCondition(query: string): SQL | undefined {
 
   const pattern = `%${escapeLike(query)}%`;
   const conditions = [
-    ilike(
-      sql`translate(${contacts.name}, 'ёЁ', 'еЕ')`,
-      `%${escapeLike(foldYo(query))}%`,
-    ),
+    ilike(sql`translate(${contacts.name}, 'ёЁ', 'еЕ')`, `%${escapeLike(foldYo(query))}%`),
     ilike(contacts.phone, pattern),
     ilike(contacts.email, pattern),
   ];

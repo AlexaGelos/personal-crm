@@ -21,6 +21,8 @@ beforeEach(async () => {
   if (tables.length === 0) return;
 
   await db.execute(
-    sql.raw(`truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`),
+    sql.raw(
+      `truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`,
+    ),
   );
 });

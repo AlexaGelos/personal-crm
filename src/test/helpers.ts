@@ -3,7 +3,10 @@ import { db } from "@/db";
 import { contactGroups, contacts, groups, notes } from "@/db/schema";
 
 export async function addContact(name: string, fields: Partial<typeof contacts.$inferInsert> = {}) {
-  const [contact] = await db.insert(contacts).values({ name, ...fields }).returning();
+  const [contact] = await db
+    .insert(contacts)
+    .values({ name, ...fields })
+    .returning();
   return contact;
 }
 

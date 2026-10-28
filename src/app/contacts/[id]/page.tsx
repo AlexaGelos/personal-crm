@@ -12,13 +12,7 @@ import { FrequencySwitch } from "@/components/frequency-switch";
 import { MarkContacted } from "@/components/mark-contacted";
 import { NoteForm } from "@/components/note-form";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContact, listNotes } from "@/lib/data";
 import { listContactGroups } from "@/lib/groups";
 import { formatDate, formatDateTime, formatDay, formatOverdue, pluralize } from "@/lib/format";
@@ -39,11 +33,7 @@ export default function ContactPage({ params }: PageProps<"/contacts/[id]">) {
   );
 }
 
-async function ContactDetails({
-  params,
-}: {
-  params: PageProps<"/contacts/[id]">["params"];
-}) {
+async function ContactDetails({ params }: { params: PageProps<"/contacts/[id]">["params"] }) {
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
@@ -88,9 +78,7 @@ async function ContactDetails({
         <CardContent>
           <dl className="grid gap-x-6 gap-y-4.5 text-[0.9375rem] leading-relaxed sm:grid-cols-[10.5rem_1fr]">
             <Detail label="Откуда знакомы">
-              {contact.howWeMet && (
-                <span className="whitespace-pre-wrap">{contact.howWeMet}</span>
-              )}
+              {contact.howWeMet && <span className="whitespace-pre-wrap">{contact.howWeMet}</span>}
             </Detail>
             <Detail label="Телефон">
               {contact.phone && (
@@ -187,7 +175,9 @@ async function ContactDetails({
                 >
                   {formatDateTime(note.createdAt)}
                 </time>
-                <p className="mt-1.5 text-[0.9375rem] leading-relaxed whitespace-pre-wrap">{note.body}</p>
+                <p className="mt-1.5 text-[0.9375rem] leading-relaxed whitespace-pre-wrap">
+                  {note.body}
+                </p>
               </li>
             ))}
           </ol>
@@ -211,13 +201,7 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
 }
 
 // When to get in touch next; nothing without a frequency
-function DueLine({
-  dueDate,
-  overdueDays,
-}: {
-  dueDate: string | null;
-  overdueDays: number | null;
-}) {
+function DueLine({ dueDate, overdueDays }: { dueDate: string | null; overdueDays: number | null }) {
   if (dueDate === null || overdueDays === null) return null;
 
   if (overdueDays > 0) {

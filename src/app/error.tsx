@@ -17,7 +17,10 @@ export default function Error({
   }, [error]);
 
   return (
-    <Doorway title="Что-то пошло не так" text="Не получилось загрузить данные. Попробуйте ещё раз через минуту.">
+    <Doorway
+      title="Что-то пошло не так"
+      text="Не получилось загрузить данные. Попробуйте ещё раз через минуту."
+    >
       <Button onClick={() => retry()}>Попробовать ещё раз</Button>
     </Doorway>
   );

@@ -18,7 +18,9 @@ export default function NewContactPage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">Новый контакт</h1>
+            <h1 className="font-heading text-[2.5rem] leading-none font-medium text-heading">
+              Новый контакт
+            </h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -49,7 +51,10 @@ function FormSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy="true" aria-label="Загружаем форму">
       {Array.from({ length: 4 }, (_, i) => (
-        <div key={i} className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer" />
+        <div
+          key={i}
+          className="h-12 bg-(image:--glow-shimmer) bg-size-[720px_100%] motion-safe:animate-shimmer"
+        />
       ))}
     </div>
   );

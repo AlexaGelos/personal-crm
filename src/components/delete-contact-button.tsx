@@ -39,8 +39,8 @@ export function DeleteContactButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Удалить контакт?</AlertDialogTitle>
           <AlertDialogDescription>
-            Контакт «{contactName}» будет удалён вместе со всеми заметками.
-            Отменить это действие нельзя.
+            Контакт «{contactName}» будет удалён вместе со всеми заметками. Отменить это действие
+            нельзя.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <form action={action}>

@@ -21,7 +21,7 @@ rules:
 #     proposal:
 #       - Keep proposals under 500 words
 #       - Always state what is out of scope
-    
+
 #     tasks:
 #       - Break tasks into chunks of max 2 hours
 

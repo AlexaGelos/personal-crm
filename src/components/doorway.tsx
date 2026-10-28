@@ -17,11 +17,20 @@ export function Doorway({
       <div aria-hidden className="hidden sconce:block">
         <div className="candle-light absolute -top-4.5 -left-74 size-105 rounded-full" />
         <StoneWall id="doorway-stone" className="absolute -top-4.5 -left-74 size-105" />
-        <WallSconce id="doorway-sconce" side="left" className="absolute top-28 -left-39 h-52.5 w-35" />
+        <WallSconce
+          id="doorway-sconce"
+          side="left"
+          className="absolute top-28 -left-39 h-52.5 w-35"
+        />
       </div>
 
       <div className="relative flex h-150 flex-col items-center justify-end gap-3.5 px-6 pb-22 text-center sm:px-9">
-        <svg aria-hidden viewBox="0 0 100 130" preserveAspectRatio="none" className="absolute inset-0 size-full">
+        <svg
+          aria-hidden
+          viewBox="0 0 100 130"
+          preserveAspectRatio="none"
+          className="absolute inset-0 size-full"
+        >
           <defs>
             <linearGradient id="doorway-void" x1="0" y1="0" x2="0" y2="1">
               <stop offset={0} style={{ stopColor: "var(--void-deep)" }} />
@@ -58,7 +67,9 @@ export function Doorway({
         <h1 className="relative font-heading text-[2.25rem] leading-none font-light whitespace-nowrap text-heading sm:text-[2.625rem]">
           {title}
         </h1>
-        <p className="relative text-[0.9375rem] leading-relaxed text-pretty text-muted-foreground">{text}</p>
+        <p className="relative text-[0.9375rem] leading-relaxed text-pretty text-muted-foreground">
+          {text}
+        </p>
         <div className="relative mt-3">{children}</div>
       </div>
     </div>

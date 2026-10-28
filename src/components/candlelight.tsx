@@ -11,7 +11,10 @@ import { WallSconce } from "@/components/wall-sconce";
 // content, never off the screen. Light and stone are centred on the sconce.
 export function Candlelight() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-160 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-160 overflow-hidden"
+    >
       {/* The light, stone and dust sit in `snuff-light` wrappers: after a contact is deleted the
           candles go out and the room goes dark, after "Связались" the candles flare up and the
           room grows lighter. The flicker animates the light itself. */}
@@ -27,7 +30,10 @@ export function Candlelight() {
             className="candle-light absolute -top-4 right-[calc(max(4px,50%_-_630px)_-_130px)] size-90 rounded-full"
             style={{ animationDuration: "4.5s", animationDelay: "-1.4s" }}
           />
-          <StoneWall id="stone-left" className="absolute -top-6 left-[calc(max(4px,50%_-_630px)_-_140px)] size-95" />
+          <StoneWall
+            id="stone-left"
+            className="absolute -top-6 left-[calc(max(4px,50%_-_630px)_-_140px)] size-95"
+          />
           <StoneWall
             id="stone-right"
             offset={44}
@@ -35,7 +41,11 @@ export function Candlelight() {
           />
         </div>
         {/* The candles go out in a wave: left sconce, the chandelier in the header, right sconce */}
-        <WallSconce id="sconce-left" side="left" className="absolute top-32.5 left-[max(4px,50%_-_630px)] h-37.5 w-25" />
+        <WallSconce
+          id="sconce-left"
+          side="left"
+          className="absolute top-32.5 left-[max(4px,50%_-_630px)] h-37.5 w-25"
+        />
         <WallSconce
           id="sconce-right"
           side="right"

@@ -24,12 +24,17 @@ export async function clearDatabase() {
   if (tables.length === 0) return;
 
   await db.execute(
-    sql.raw(`truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`),
+    sql.raw(
+      `truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`,
+    ),
   );
 }
 
 export async function addContacts(names: string[]) {
-  return db.insert(contacts).values(names.map((name) => ({ name }))).returning();
+  return db
+    .insert(contacts)
+    .values(names.map((name) => ({ name })))
+    .returning();
 }
 
 export async function addNotes(contactId: number, bodies: string[]) {
