@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 
 import { createContact } from "@/app/actions";
 import { BackLink } from "@/components/back-link";
@@ -33,8 +34,10 @@ export default function NewContactPage() {
   );
 }
 
-// The groups to choose from come from the database, so the form waits for them inside Suspense
+// The groups to choose from come from the database, so the form waits for them inside Suspense.
+// Rendered on every request: the build has no database, and the groups change at any time
 async function NewContactForm() {
+  await connection();
   const groups = await listGroups();
 
   return (
