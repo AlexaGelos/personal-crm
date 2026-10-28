@@ -9,10 +9,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar } from "@/components/avatar";
-import { LoneCandle } from "@/components/lone-candle";
+import { EmptyState } from "@/components/empty-state";
 import { ShowMoreButton } from "@/components/show-more-button";
 import { countContacts, listContacts } from "@/lib/data";
 import { CONTACT_FORMS, formatNumber, pluralize } from "@/lib/format";
+import { selectedGroup } from "@/lib/selected-group";
 
 // Contacts shown on open and added by each "Показать ещё" click
 const PAGE_SIZE = 50;
@@ -23,9 +24,10 @@ function parseLimit(value: string | string[] | undefined) {
   return Math.max(Number(value), PAGE_SIZE);
 }
 
-// Keeps ?due=all, so the "Пора связаться" block above stays expanded
-function showMoreHref(query: string, limit: number, dueAll: boolean) {
+// Keeps ?group= and ?due=all, so the chosen group and the expanded "Пора связаться" block stay
+function showMoreHref(query: string, groupId: number | undefined, limit: number, dueAll: boolean) {
   const params = new URLSearchParams();
+  if (groupId !== undefined) params.set("group", String(groupId));
   if (query) params.set("q", query);
   if (dueAll) params.set("due", "all");
   params.set("limit", String(limit));
@@ -40,13 +42,25 @@ export async function ContactList({
   const { q, limit: limitParam, due } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const limit = parseLimit(limitParam);
+  const group = await selectedGroup(searchParams);
+  // With a group chosen everything below - the rows and both counts - is about its contacts only
   const [rows, total, matched] = await Promise.all([
-    listContacts(query, limit),
-    countContacts(),
-    query ? countContacts(query) : null,
+    listContacts({ query, limit, groupId: group?.id }),
+    countContacts("", group?.id),
+    query ? countContacts(query, group?.id) : null,
   ]);
   const found = matched ?? total;
   const hasMore = rows.length < found;
+
+  if (total === 0 && group) {
+    return (
+      <EmptyState
+        candle="unlit"
+        title={`В группе «${group.name}» пока никого`}
+        hint="Отметьте эту группу в форме контакта, чтобы добавить в неё человека."
+      />
+    );
+  }
 
   if (total === 0) {
     return (
@@ -76,7 +90,7 @@ export async function ContactList({
       {rows.length === 0 ? (
         <EmptyState
           candle="snuffed"
-          title={`Никого не нашли по запросу «${query}»`}
+          title={`Никого не нашли по запросу «${query}»${group ? ` в группе «${group.name}»` : ""}`}
           hint="Проверьте написание или поищите по части имени, телефона или почты."
         />
       ) : (
@@ -104,12 +118,20 @@ export async function ContactList({
                         name={contact.name}
                         className="group-hover/row:border-glow-line group-hover/row:shadow-glow-avatar"
                       />
-                      <Link
-                        href={`/contacts/${contact.id}`}
-                        className="font-heading text-xl font-medium text-heading transition-colors duration-400 outline-none group-hover/row:text-glow-text after:absolute after:inset-0 focus-visible:underline"
-                      >
-                        {contact.name}
-                      </Link>
+                      <div className="flex min-w-0 flex-col">
+                        <Link
+                          href={`/contacts/${contact.id}`}
+                          className="font-heading text-xl font-medium text-heading transition-colors duration-400 outline-none group-hover/row:text-glow-text after:absolute after:inset-0 focus-visible:underline"
+                        >
+                          {contact.name}
+                        </Link>
+                        {/* The groups of the contact, on every screen; none - no empty line */}
+                        {contact.groupNames.length > 0 && (
+                          <span className="block max-w-56 truncate text-[0.8125rem] text-muted-foreground sm:max-w-80">
+                            {contact.groupNames.join(" · ")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden max-w-72 truncate text-muted-foreground md:table-cell">
@@ -131,31 +153,11 @@ export async function ContactList({
       {hasMore && (
         <div className="mt-3 flex justify-center">
           <ShowMoreButton
-            href={showMoreHref(query, rows.length + PAGE_SIZE, due === "all")}
+            href={showMoreHref(query, group?.id, rows.length + PAGE_SIZE, due === "all")}
             label="Показать ещё"
           />
         </div>
       )}
-    </div>
-  );
-}
-
-function EmptyState({
-  candle,
-  title,
-  hint,
-}: {
-  candle: "unlit" | "snuffed";
-  title: string;
-  hint: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-2.5 rounded-card border border-dashed border-avatar-line bg-card px-7 pt-11 pb-12 text-center">
-      <div className="mb-2">
-        <LoneCandle id={`empty-candle-${candle}`} state={candle} />
-      </div>
-      <p className="font-heading text-[1.625rem] leading-tight font-medium text-heading">{title}</p>
-      <p className="max-w-sm text-sm text-muted-foreground">{hint}</p>
     </div>
   );
 }

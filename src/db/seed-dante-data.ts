@@ -282,3 +282,54 @@ export const NOTE_TEMPLATES: ((pick: Pick, g: (male: string, female: string) => 
 ];
 
 export const EMAIL_DOMAINS = ["virgilio.it", "libero.it", "tiscali.it", "alice.it", "tin.it", "gmail.com"];
+
+// Groups for the Divine Comedy contacts. The names are made up to be unlikely to clash with
+// the groups the owner makes (Семья, Друзья, Теннис...). The first one marks "groups are added"
+export const GROUPS = [
+  "Поэты",
+  "Флорентийцы",
+  "Ад",
+  "Чистилище",
+  "Рай",
+  "Друзья юности",
+  "Родня Алигьери",
+  // Nobody is in it: to see the empty group on the home page
+  "Венецианское посольство",
+];
+
+type GroupRule = {
+  group: string;
+  // Matches the "Кто это" text of a contact
+  about?: RegExp;
+  // Heroes of the poem that the text does not tell
+  names?: string[];
+};
+
+// A contact gets every group whose rule fits, so many are in two or three groups
+const GROUP_RULES: GroupRule[] = [
+  {
+    group: "Поэты",
+    about: /[Пп]оэт|[Тт]рубадур|[Мм]узыкант|[Лл]ютнист|[Пп]ереписчик|[Пп]ереводчик/,
+    names: ["Казелла"],
+  },
+  { group: "Флорентийцы", about: /[Фф]лоренти|Флоренц|Новом рынке|Калимала|Сан-Мартино|Арно|Ольтрарно|Понте-Веккьо|Санта-Кроче|Сан-Джованни|приор/ },
+  { group: "Ад", about: /круг|рв[ауе]|Стикс|Ахерон|Лимб|гробниц|Ада|Аду/ },
+  { group: "Чистилище", about: /уступ|Чистилищ/ },
+  { group: "Рай", about: /неба |небе |Эмпире|Земном раю|Земного рая/ },
+  {
+    group: "Друзья юности",
+    about: /[Дд]руг юности|[Пп]одруга юности|Первый друг/,
+    names: ["Лапо Джанни", "Чино да Пистойя", "Карл Мартелл"],
+  },
+  {
+    group: "Родня Алигьери",
+    about: /Алигьери|Прапрадед/,
+    names: ["Джемма Донати", "Корсо Донати"],
+  },
+];
+
+export function groupsFor(name: string, about: string | null) {
+  return GROUP_RULES.filter(
+    (rule) => rule.names?.includes(name) || (about !== null && rule.about?.test(about)),
+  ).map((rule) => rule.group);
+}

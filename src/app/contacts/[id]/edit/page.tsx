@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { ContactForm } from "@/components/contact-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContact } from "@/lib/data";
+import { listContactGroups, listGroups } from "@/lib/groups";
 import { parseContactId } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -31,7 +32,11 @@ async function EditContact({
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
-  const contact = await getContact(id);
+  const [contact, groups, contactGroups] = await Promise.all([
+    getContact(id),
+    listGroups(),
+    listContactGroups(id),
+  ]);
   if (!contact) notFound();
 
   const cardHref = `/contacts/${contact.id}`;
@@ -54,7 +59,10 @@ async function EditContact({
               howWeMet: contact.howWeMet ?? "",
               phone: contact.phone ?? "",
               email: contact.email ?? "",
+              groupIds: contactGroups.map((group) => group.id),
+              newGroupNames: [],
             }}
+            groups={groups}
             submitLabel="Сохранить"
             cancelHref={cardHref}
           />

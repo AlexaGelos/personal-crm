@@ -1,17 +1,20 @@
 // Adds 500 test contacts themed on Dante's "Divine Comedy" next to the existing ones:
 // pnpm db:seed:dante. Only adds, never changes or deletes; runs once: if Virgil is
-// already in the database, nothing is added.
-import { eq } from "drizzle-orm";
+// already in the database, no contacts are added. Then the same for the groups of these
+// contacts: they are added once too, also to contacts that are already there.
+import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { databaseConfig, loadLocalEnv } from "./config";
-import { contacts, notes } from "./schema";
+import { contactGroups, contacts, groups, notes } from "./schema";
 import {
   ABOUT,
   CHARACTERS,
   EMAIL_DOMAINS,
   FEMALE_NAMES,
+  GROUPS,
+  groupsFor,
   HOW_WE_MET,
   MALE_NAMES,
   NOTE_TEMPLATES,
@@ -116,60 +119,116 @@ function generateContacts(now: number): SeedContact[] {
   return result;
 }
 
+type Database = ReturnType<typeof drizzle>;
+
+async function addContacts(db: Database, generated: SeedContact[], now: number) {
+  const added = await db.$count(contacts, eq(contacts.name, CHARACTERS[0].name));
+  if (added > 0) {
+    console.log("The Divine Comedy contacts are already in the database: no contacts were added.");
+    return;
+  }
+
+  const noteTotal = await db.transaction(async (tx) => {
+    const idByName = new Map<string, number>();
+    for (const part of chunk(generated, 250)) {
+      const rows = await tx
+        .insert(contacts)
+        .values(
+          part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
+            name,
+            about,
+            howWeMet,
+            phone,
+            email,
+            createdAt,
+          })),
+        )
+        .returning({ id: contacts.id, name: contacts.name });
+      for (const row of rows) idByName.set(row.name, row.id);
+    }
+
+    // Notes are spread between the contact's creation date and today, oldest first
+    const noteRows = generated.flatMap((contact) => {
+      const start = contact.createdAt.getTime();
+      const dates = contact.noteBodies
+        .map(() => new Date(start + random() * (now - start)))
+        .sort((a, b) => a.getTime() - b.getTime());
+      return contact.noteBodies.map((body, i) => ({
+        contactId: idByName.get(contact.name)!,
+        body,
+        createdAt: dates[i],
+      }));
+    });
+
+    for (const part of chunk(noteRows, 500)) {
+      await tx.insert(notes).values(part);
+    }
+    return noteRows.length;
+  });
+
+  console.log(`Added ${generated.length} Divine Comedy contacts and ${noteTotal} notes.`);
+}
+
+// Groups go to the Divine Comedy contacts that are in the database, whether this run added them
+// or an earlier one did. The generator is seeded, so "generated" holds the same names and "Кто это"
+// as when the contacts were added
+async function addGroups(db: Database, generated: SeedContact[]) {
+  const added = await db.$count(groups, eq(groups.name, GROUPS[0]));
+  if (added > 0) {
+    console.log("The Divine Comedy groups are already in the database: no groups were added.");
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const groupRows = await tx
+      .insert(groups)
+      .values(GROUPS.map((name) => ({ name })))
+      .returning({ id: groups.id, name: groups.name });
+    const groupIdByName = new Map(groupRows.map((row) => [row.name, row.id]));
+
+    // A contact of the owner with the same name but another "Кто это" is not ours
+    const wanted = new Map(generated.map((contact) => [contact.name, contact.about ?? null]));
+    const rows: { id: number; name: string; about: string | null }[] = [];
+    for (const part of chunk([...wanted.keys()], 500)) {
+      rows.push(
+        ...(await tx
+          .select({ id: contacts.id, name: contacts.name, about: contacts.about })
+          .from(contacts)
+          .where(inArray(contacts.name, part))),
+      );
+    }
+
+    const links = rows
+      .filter((row) => wanted.get(row.name) === row.about)
+      .flatMap((row) =>
+        groupsFor(row.name, row.about).map((group) => ({
+          contactId: row.id,
+          groupId: groupIdByName.get(group)!,
+        })),
+      );
+    for (const part of chunk(links, 500)) {
+      await tx.insert(contactGroups).values(part);
+    }
+    return { groupCount: groupRows.length, linkCount: links.length };
+  });
+
+  console.log(
+    `Added ${result.groupCount} Divine Comedy groups and put contacts into them ${result.linkCount} times.`,
+  );
+}
+
 async function main() {
   loadLocalEnv();
   const sql = postgres({ ...databaseConfig(), max: 1, onnotice: () => {} });
   const db = drizzle(sql);
 
   try {
-    const added = await db.$count(contacts, eq(contacts.name, CHARACTERS[0].name));
-    if (added > 0) {
-      console.log("The Divine Comedy contacts are already in the database: nothing was added.");
-      return;
-    }
-
+    // Generated first and only once: the random numbers must come in the same order as always
     const now = Date.now();
     const generated = generateContacts(now);
 
-    const noteTotal = await db.transaction(async (tx) => {
-      const idByName = new Map<string, number>();
-      for (const part of chunk(generated, 250)) {
-        const rows = await tx
-          .insert(contacts)
-          .values(
-            part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
-              name,
-              about,
-              howWeMet,
-              phone,
-              email,
-              createdAt,
-            })),
-          )
-          .returning({ id: contacts.id, name: contacts.name });
-        for (const row of rows) idByName.set(row.name, row.id);
-      }
-
-      // Notes are spread between the contact's creation date and today, oldest first
-      const noteRows = generated.flatMap((contact) => {
-        const start = contact.createdAt.getTime();
-        const dates = contact.noteBodies
-          .map(() => new Date(start + random() * (now - start)))
-          .sort((a, b) => a.getTime() - b.getTime());
-        return contact.noteBodies.map((body, i) => ({
-          contactId: idByName.get(contact.name)!,
-          body,
-          createdAt: dates[i],
-        }));
-      });
-
-      for (const part of chunk(noteRows, 500)) {
-        await tx.insert(notes).values(part);
-      }
-      return noteRows.length;
-    });
-
-    console.log(`Added ${generated.length} Divine Comedy contacts and ${noteTotal} notes.`);
+    await addContacts(db, generated, now);
+    await addGroups(db, generated);
   } finally {
     await sql.end();
   }

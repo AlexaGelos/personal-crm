@@ -16,14 +16,27 @@ export type ContactFields = {
   email: string;
 };
 
+// The form also holds the checked groups and the names typed into "Новая группа"
+export type ContactFormValues = ContactFields & {
+  groupIds: number[];
+  newGroupNames: string[];
+};
+
 export type ContactFormState = {
-  values?: ContactFields;
-  errors?: Partial<Record<keyof ContactFields, string[]>>;
+  values?: ContactFormValues;
+  // newGroupNames: a typed name the browser should have refused (e.g. over 50 characters)
+  errors?: Partial<Record<keyof ContactFields | "newGroupNames", string[]>>;
   message?: string;
 };
 
 export type NoteFormState = {
   body?: string;
+  error?: string;
+};
+
+// Create and rename forms of a group; "name" brings the typed text back after an error
+export type GroupFormState = {
+  name?: string;
   error?: string;
 };
 
@@ -43,12 +56,14 @@ export type MarkContactedResult = { mark: ContactedMark } | { error: string };
 
 export type UndoContactedResult = { error?: string };
 
-export const emptyContactFields: ContactFields = {
+export const emptyContactFields: ContactFormValues = {
   name: "",
   about: "",
   howWeMet: "",
   phone: "",
   email: "",
+  groupIds: [],
+  newGroupNames: [],
 };
 
 // Empty optional fields are stored as NULL
@@ -84,6 +99,18 @@ export const noteSchema = z
   .min(1, "Напишите текст заметки")
   .max(5000, "Не больше 5000 символов");
 
+export const groupNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Укажите название")
+  .max(50, "Не больше 50 символов");
+
+// The same key as the unique index on groups: case and "ё" / "е" do not tell names apart.
+// Keep it in step with lower(translate(name, 'ёЁ', 'еЕ')) in src/db/schema.ts
+export function groupNameKey(name: string) {
+  return name.replace(/ё/g, "е").replace(/Ё/g, "Е").toLocaleLowerCase("ru");
+}
+
 export const frequencySchema = z
   .enum(frequencyChoices)
   .transform((value): ContactFrequency | null => (value === "none" ? null : value));
@@ -98,4 +125,9 @@ export function parseContactId(segment: string) {
   if (!/^\d{1,10}$/.test(segment)) return null;
   const parsed = idSchema.safeParse(Number(segment));
   return parsed.success ? parsed.data : null;
+}
+
+// ?group=5 -> 5; a missing, repeated or malformed value -> null
+export function parseGroupId(value: string | string[] | undefined) {
+  return typeof value === "string" ? parseContactId(value) : null;
 }

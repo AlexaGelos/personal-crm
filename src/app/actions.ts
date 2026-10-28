@@ -8,14 +8,22 @@ import { z } from "zod";
 import { db } from "@/db";
 import { contacts, notes } from "@/db/schema";
 import {
+  createGroup as insertGroup,
+  deleteGroup as removeGroup,
+  renameGroup as updateGroup,
+  setContactGroups,
+} from "@/lib/groups";
+import {
   contactSchema,
   frequencySchema,
+  groupNameSchema,
   idSchema,
   momentSchema,
   noteSchema,
-  type ContactFields,
   type ContactFormState,
+  type ContactFormValues,
   type FrequencyFormState,
+  type GroupFormState,
   type MarkContactedResult,
   type NoteFormState,
   type UndoContactedResult,
@@ -29,13 +37,39 @@ function readText(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function readContactFields(formData: FormData): ContactFields {
+function readContactFields(formData: FormData): ContactFormValues {
   return {
     name: readText(formData, "name"),
     about: readText(formData, "about"),
     howWeMet: readText(formData, "howWeMet"),
     phone: readText(formData, "phone"),
     email: readText(formData, "email"),
+    // Checked groups, then the names typed into "Новая группа"
+    groupIds: formData.getAll("groupId").flatMap((value) => {
+      const parsed = idSchema.safeParse(typeof value === "string" ? Number(value) : NaN);
+      return parsed.success ? [parsed.data] : [];
+    }),
+    newGroupNames: formData
+      .getAll("newGroup")
+      .filter((value): value is string => typeof value === "string"),
+  };
+}
+
+// The contact fields and the typed group names, checked together: the form shows all errors at once
+function parseContactForm(values: ContactFormValues) {
+  const contact = contactSchema.safeParse(values);
+  const newGroupNames = z.array(groupNameSchema).safeParse(values.newGroupNames);
+  if (contact.success && newGroupNames.success) {
+    return { contact: contact.data, newGroupNames: newGroupNames.data };
+  }
+
+  return {
+    errors: {
+      ...(contact.success ? {} : z.flattenError(contact.error).fieldErrors),
+      ...(newGroupNames.success
+        ? {}
+        : { newGroupNames: [newGroupNames.error.issues[0].message] }),
+    },
   };
 }
 
@@ -44,17 +78,26 @@ export async function createContact(
   formData: FormData,
 ): Promise<ContactFormState> {
   const values = readContactFields(formData);
-  const parsed = contactSchema.safeParse(values);
-  if (!parsed.success) {
-    return { values, errors: z.flattenError(parsed.error).fieldErrors };
+  const parsed = parseContactForm(values);
+  if (parsed.errors) {
+    return { values, errors: parsed.errors };
   }
 
-  const [created] = await db
-    .insert(contacts)
-    .values(parsed.data)
-    .returning({ id: contacts.id });
+  const created = await db.transaction(async (tx) => {
+    const [contact] = await tx
+      .insert(contacts)
+      .values(parsed.contact)
+      .returning({ id: contacts.id });
+    await setContactGroups(tx, contact.id, {
+      groupIds: values.groupIds,
+      newGroupNames: parsed.newGroupNames,
+    });
+    return contact;
+  });
 
   revalidatePath("/");
+  // New groups may have been made, and the number of contacts in groups changed
+  revalidateGroups();
   redirect(`/contacts/${created.id}`);
 }
 
@@ -65,16 +108,25 @@ export async function updateContact(
 ): Promise<ContactFormState> {
   const id = idSchema.parse(contactId);
   const values = readContactFields(formData);
-  const parsed = contactSchema.safeParse(values);
-  if (!parsed.success) {
-    return { values, errors: z.flattenError(parsed.error).fieldErrors };
+  const parsed = parseContactForm(values);
+  if (parsed.errors) {
+    return { values, errors: parsed.errors };
   }
 
-  const [updated] = await db
-    .update(contacts)
-    .set(parsed.data)
-    .where(eq(contacts.id, id))
-    .returning({ id: contacts.id });
+  const updated = await db.transaction(async (tx) => {
+    const [contact] = await tx
+      .update(contacts)
+      .set(parsed.contact)
+      .where(eq(contacts.id, id))
+      .returning({ id: contacts.id });
+    if (!contact) return null;
+
+    await setContactGroups(tx, id, {
+      groupIds: values.groupIds,
+      newGroupNames: parsed.newGroupNames,
+    });
+    return contact;
+  });
 
   if (!updated) {
     return { values, message: CONTACT_GONE };
@@ -82,6 +134,7 @@ export async function updateContact(
 
   revalidatePath("/");
   revalidatePath(`/contacts/${id}`);
+  revalidateGroups();
   redirect(`/contacts/${id}`);
 }
 
@@ -95,6 +148,8 @@ export async function deleteContact(contactId: number) {
     .returning({ name: contacts.name });
 
   revalidatePath("/");
+  // The contact leaves its groups: the groups page shows how many contacts each one has
+  revalidatePath("/groups");
   // ?deleted= makes the list show a "contact deleted" message. Nothing was
   // deleted (e.g. already gone in another tab) - no message
   redirect(deleted ? `/?${new URLSearchParams({ deleted: deleted.name })}` : "/");
@@ -214,4 +269,59 @@ export async function undoContacted(
   revalidatePath("/");
   revalidatePath(`/contacts/${id}`);
   return {};
+}
+
+// Name of a group is shown on the home page, in cards, in forms and on the groups page
+function revalidateGroups() {
+  revalidatePath("/", "layout");
+}
+
+export async function createGroup(
+  _prevState: GroupFormState,
+  formData: FormData,
+): Promise<GroupFormState> {
+  const name = readText(formData, "name");
+  const parsed = groupNameSchema.safeParse(name);
+  if (!parsed.success) {
+    return { name, error: parsed.error.issues[0]?.message };
+  }
+
+  const result = await insertGroup(parsed.data);
+  if ("error" in result) {
+    return { name, error: result.error };
+  }
+
+  revalidateGroups();
+  return {};
+}
+
+export async function renameGroup(
+  groupId: number,
+  _prevState: GroupFormState,
+  formData: FormData,
+): Promise<GroupFormState> {
+  const id = idSchema.parse(groupId);
+  const name = readText(formData, "name");
+  const parsed = groupNameSchema.safeParse(name);
+  if (!parsed.success) {
+    return { name, error: parsed.error.issues[0]?.message };
+  }
+
+  const result = await updateGroup(id, parsed.data);
+  if ("error" in result) {
+    return { name, error: result.error };
+  }
+
+  revalidateGroups();
+  // Back to the plain list: the row stops being a form
+  redirect("/groups");
+}
+
+export async function deleteGroup(groupId: number) {
+  const id = idSchema.parse(groupId);
+
+  await removeGroup(id);
+
+  revalidateGroups();
+  redirect("/groups");
 }
