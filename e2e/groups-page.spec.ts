@@ -39,7 +39,9 @@ for (const width of [320, 390]) {
     }
 
     // No word of a name breaks in the middle: the longest one fits next to the buttons, 4px to
-    // spare, as some systems draw the font a little wider (the CI on Linux does)
+    // spare, as some systems draw the font a little wider (the CI on Linux does). Measured in
+    // the web font, not in the fallback one shown while it loads
+    await page.evaluate(() => document.fonts.ready);
     const brokenWords = await page.evaluate(() => {
       const probe = document.createElement("span");
       probe.style.cssText = "position: absolute; visibility: hidden; white-space: nowrap";

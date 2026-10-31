@@ -84,7 +84,7 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <Link
                   href={`/?group=${group.id}`}
-                  className="font-heading text-xl leading-tight font-medium break-words max-[22.5rem]:text-lg text-heading transition-colors duration-400 outline-none hover:text-glow-text focus-visible:underline"
+                  className="font-heading text-xl leading-tight font-medium break-words max-[22.5rem]:text-base text-heading transition-colors duration-400 outline-none hover:text-glow-text focus-visible:underline"
                 >
                   {group.name}
                 </Link>
