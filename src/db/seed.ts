@@ -1,4 +1,5 @@
-// Fills an empty database with realistic test contacts: pnpm db:seed
+// Fills an empty database with realistic test contacts and puts them into groups: pnpm db:seed.
+// The groups are added once, also to test contacts that are already in the database
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -8,13 +9,15 @@ import {
   ABOUT,
   EMAIL_DOMAINS,
   FEMALE_NAMES,
+  GROUPS_MARKER,
+  groupsFor,
   HOW_WE_MET,
   MALE_NAMES,
   NOTE_TEMPLATES,
   SURNAMES,
   type Gender,
 } from "./seed-data";
-import { chunk, createRandom } from "./seed-tools";
+import { addSeedGroups, chunk, createRandom } from "./seed-tools";
 
 const CONTACT_COUNT = 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -147,62 +150,86 @@ function generateContacts(now: number): SeedContact[] {
   return result;
 }
 
+type Database = ReturnType<typeof drizzle>;
+
+// Contacts go only into an empty database
+async function addContacts(db: Database, generated: SeedContact[], now: number) {
+  const existing = await db.$count(contacts);
+  if (existing > 0) {
+    console.log(`The database already has ${existing} contacts: no contacts were added.`);
+    return;
+  }
+
+  const noteTotal = await db.transaction(async (tx) => {
+    const idByName = new Map<string, number>();
+    for (const part of chunk(generated, 250)) {
+      const rows = await tx
+        .insert(contacts)
+        .values(
+          part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
+            name,
+            about,
+            howWeMet,
+            phone,
+            email,
+            createdAt,
+          })),
+        )
+        .returning({ id: contacts.id, name: contacts.name });
+      for (const row of rows) idByName.set(row.name, row.id);
+    }
+
+    // Notes are spread between the contact's creation date and today, oldest first
+    const noteRows = generated.flatMap((contact) => {
+      const start = contact.createdAt.getTime();
+      const dates = contact.noteBodies
+        .map(() => new Date(start + random() * (now - start)))
+        .sort((a, b) => a.getTime() - b.getTime());
+      return contact.noteBodies.map((body, i) => ({
+        contactId: idByName.get(contact.name)!,
+        body,
+        createdAt: dates[i],
+      }));
+    });
+
+    for (const part of chunk(noteRows, 500)) {
+      await tx.insert(notes).values(part);
+    }
+    return noteRows.length;
+  });
+
+  console.log(`Seeded ${generated.length} contacts and ${noteTotal} notes.`);
+}
+
+// Groups go to the test contacts that are in the database, whether this run added them or an
+// earlier one did. The generator is seeded, so "generated" holds the same names and "Кто это"
+// as when the contacts were added
+async function addGroups(db: Database, generated: SeedContact[]) {
+  const result = await addSeedGroups(db, {
+    marker: GROUPS_MARKER,
+    seeded: generated.map((contact) => ({ name: contact.name, about: contact.about ?? null })),
+    groupsFor,
+  });
+
+  console.log(
+    result === null
+      ? "The test contact groups are already in the database: no groups were added."
+      : `Added ${result.groupCount} groups and put contacts into groups ${result.linkCount} times.`,
+  );
+}
+
 async function main() {
   loadLocalEnv();
   const sql = postgres({ ...databaseConfig(), max: 1, onnotice: () => {} });
   const db = drizzle(sql);
 
   try {
-    const existing = await db.$count(contacts);
-    if (existing > 0) {
-      console.log(
-        `The database already has ${existing} contacts: seeding skipped, nothing was changed.`,
-      );
-      return;
-    }
-
+    // Generated first and only once: the random numbers must come in the same order as always
     const now = Date.now();
     const generated = generateContacts(now);
 
-    const noteTotal = await db.transaction(async (tx) => {
-      const idByName = new Map<string, number>();
-      for (const part of chunk(generated, 250)) {
-        const rows = await tx
-          .insert(contacts)
-          .values(
-            part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
-              name,
-              about,
-              howWeMet,
-              phone,
-              email,
-              createdAt,
-            })),
-          )
-          .returning({ id: contacts.id, name: contacts.name });
-        for (const row of rows) idByName.set(row.name, row.id);
-      }
-
-      // Notes are spread between the contact's creation date and today, oldest first
-      const noteRows = generated.flatMap((contact) => {
-        const start = contact.createdAt.getTime();
-        const dates = contact.noteBodies
-          .map(() => new Date(start + random() * (now - start)))
-          .sort((a, b) => a.getTime() - b.getTime());
-        return contact.noteBodies.map((body, i) => ({
-          contactId: idByName.get(contact.name)!,
-          body,
-          createdAt: dates[i],
-        }));
-      });
-
-      for (const part of chunk(noteRows, 500)) {
-        await tx.insert(notes).values(part);
-      }
-      return noteRows.length;
-    });
-
-    console.log(`Seeded ${generated.length} contacts and ${noteTotal} notes.`);
+    await addContacts(db, generated, now);
+    await addGroups(db, generated);
   } finally {
     await sql.end();
   }

@@ -1,6 +1,7 @@
 // Word lists for the Divine Comedy test contacts (seed-dante.ts)
 
 import type { Gender, Gendered } from "./seed-data";
+import type { SeedGroupContact } from "./seed-tools";
 
 type Pick = <T>(items: readonly T[]) => T;
 
@@ -946,43 +947,59 @@ export const EMAIL_DOMAINS = [
   "gmail.com",
 ];
 
-// Groups for the Divine Comedy contacts. The names are made up to be unlikely to clash with
-// the groups the owner makes (Семья, Друзья, Теннис...). The first one marks "groups are added"
-export const GROUPS = [
-  "Поэты",
-  "Флорентийцы",
-  "Ад",
-  "Чистилище",
-  "Рай",
-  "Друзья юности",
-  "Родня Алигьери",
-  // Nobody is in it: to see the empty group on the home page
-  "Венецианское посольство",
-];
+// Groups for the Divine Comedy contacts: by the logic of the poem and by where the heroes come
+// from. The names are made up to be unlikely to clash with the groups the owner makes (Семья,
+// Друзья, Теннис...). The first set of groups started with "Поэты"; this marker is the newest set
+export const GROUPS_MARKER = "Проводники";
 
 type GroupRule = {
   group: string;
   // Matches the "Кто это" text of a contact
   about?: RegExp;
-  // Heroes of the poem that the text does not tell
+  // Matches "Как познакомились"
+  howWeMet?: RegExp;
+  // Heroes of the poem that the texts do not tell
   names?: string[];
+  // The made-up Florentines: the family tells the city
+  surnames?: string[];
 };
 
+const SIENESE_FAMILIES = ["Толомеи", "Буонсиньори"];
+const PISAN_FAMILIES = ["Ланфранки", "Сизмонди"];
+const FLORENTINE_FAMILIES = SURNAMES.map(([surname]) => surname).filter(
+  (surname) => !SIENESE_FAMILIES.includes(surname) && !PISAN_FAMILIES.includes(surname),
+);
+
+// The realm a soul is in: what "Кто это" or the poem says, and only if they say nothing,
+// where we met
+export const REALM_RULES: (GroupRule & { about: RegExp; howWeMet: RegExp })[] = [
+  {
+    group: "Ад",
+    about: /круг|рв[ауе]|Стикс|Ахерон|Лимб|гробниц|Ада|Аду/,
+    howWeMet: /Ада|Лимбе|Харона|Миносу|Стикс|Коцит|круг|рву|Толомее|Антенор|Ахерон/,
+    names: ["Руджери Убальдини"],
+  },
+  {
+    group: "Чистилище",
+    about: /уступ|Чистилищ/,
+    howWeMet: /Чистилищ|уступ|Долине правителей|предгорье/,
+    names: ["Сорделло да Гоито"],
+  },
+  {
+    group: "Рай",
+    about: /неба |небе |Эмпире|Земном раю|Земного рая/,
+    howWeMet: /в Раю|небе|Эмпире|Земном раю/,
+    names: ["Лючия Сиракузская"],
+  },
+];
+
 // A contact gets every group whose rule fits, so many are in two or three groups
-const GROUP_RULES: GroupRule[] = [
+export const GROUP_RULES: GroupRule[] = [
   {
     group: "Поэты",
     about: /[Пп]оэт|[Тт]рубадур|[Мм]узыкант|[Лл]ютнист|[Пп]ереписчик|[Пп]ереводчик/,
     names: ["Казелла"],
   },
-  {
-    group: "Флорентийцы",
-    about:
-      /[Фф]лоренти|Флоренц|Новом рынке|Калимала|Сан-Мартино|Арно|Ольтрарно|Понте-Веккьо|Санта-Кроче|Сан-Джованни|приор/,
-  },
-  { group: "Ад", about: /круг|рв[ауе]|Стикс|Ахерон|Лимб|гробниц|Ада|Аду/ },
-  { group: "Чистилище", about: /уступ|Чистилищ/ },
-  { group: "Рай", about: /неба |небе |Эмпире|Земном раю|Земного рая/ },
   {
     group: "Друзья юности",
     about: /[Дд]руг юности|[Пп]одруга юности|Первый друг/,
@@ -993,10 +1010,177 @@ const GROUP_RULES: GroupRule[] = [
     about: /Алигьери|Прапрадед/,
     names: ["Джемма Донати", "Корсо Донати"],
   },
+
+  // The roles in the poem
+  {
+    group: GROUPS_MARKER,
+    about: /[Пп]роводни/,
+    names: [
+      "Публий Вергилий Марон",
+      "Беатриче Портинари",
+      "Матильда",
+      "Публий Папиний Стаций",
+      "Сорделло да Гоито",
+      "Лючия Сиракузская",
+      "Бернард Клервоский",
+    ],
+  },
+  {
+    group: "Стражи",
+    about: /Хранител/,
+    names: ["Харон", "Минос", "Флегий", "Хирон", "Катон Утический"],
+  },
+  {
+    group: "Белые гвельфы",
+    about: /белы[йх] гвельф/,
+    // Those driven out in 1302 were the Whites
+    howWeMet: /изгнаны из Флоренции в 1302/,
+    names: ["Гвидо Кавальканти"],
+  },
+  {
+    group: "Чёрные гвельфы",
+    about: /[Чч]ёрн(ый|ых) гвельф/,
+    names: ["Корсо Донати", "Филиппо Ардженти"],
+  },
+  {
+    group: "Гибеллины",
+    about: /ибеллин/,
+    names: [
+      "Манфред Сицилийский",
+      "Гвидо да Монтефельтро",
+      "Буонконте да Монтефельтро",
+      "Пьер делла Винья",
+      "Кангранде делла Скала",
+      "Руджери Убальдини",
+      "Провенцано Сальвани",
+    ],
+  },
+  {
+    group: "Изгнание",
+    // Not "принимает изгнанников": the hosts are named below
+    about: /Изгнанни[кц]/,
+    howWeMet: /изгнани|изгнаны/,
+    names: ["Кангранде делла Скала", "Гвидо Новелло да Полента", "Коррадо Маласпина"],
+  },
+  { group: "Битва при Кампальдино", howWeMet: /Кампальдино/ },
+  {
+    group: "Святые и духовенство",
+    about: /[Мм]онах|[Аа]ббатис|[Оо]тшельни|[Бб]огослов|[Сс]вят|[Фф]ранцискан|епископ/,
+    names: ["Бенедикт Нурсийский", "Бернард Клервоский"],
+  },
+  {
+    group: "Правители",
+    // Not "Жена подесты" or "Жена бывшего приора"
+    about: /Король|Император|[Сс]иньор|[Пп]равител|^Подеста|^Бывший приор|Маркиз|Граф|Судья/,
+    names: ["Гуго Капет"],
+  },
+  {
+    group: "Художники",
+    about: /Художни|Миниатюрист|Ученик Джотто|Ученица Джотто|витраж/,
+    howWeMet: /мастерской Джотто/,
+  },
+
+  // Where they come from
+  {
+    group: "Флорентийцы",
+    about:
+      /[Фф]лоренти|Флоренц|Новом рынке|Калимала|Сан-Мартино|Арно|Ольтрарно|Понте-Веккьо|Санта-Кроче|Сан-Джованни|приор/,
+    names: [
+      "Брунетто Латини",
+      "Гвидо Гуэрра",
+      "Лапо Джанни",
+      "Джотто ди Бондоне",
+      "Ченни ди Пепо Чимабуэ",
+      "Джованна Примавера",
+      "Каччагвида",
+    ],
+    surnames: FLORENTINE_FAMILIES,
+  },
+  {
+    group: "Сиенцы",
+    names: ["Провенцано Сальвани", "Сапия Сиенская"],
+    surnames: SIENESE_FAMILIES,
+  },
+  {
+    group: "Пизанцы",
+    names: ["Уголино делла Герардеска", "Руджери Убальдини", "Нино Висконти"],
+    surnames: PISAN_FAMILIES,
+  },
+  { group: "Пистойцы", names: ["Ванни Фуччи", "Чино да Пистойя", "Сельваджа Верджолези"] },
+  {
+    group: "Романья",
+    names: [
+      "Франческа да Римини",
+      "Паоло Малатеста",
+      "Гвидо да Монтефельтро",
+      "Буонконте да Монтефельтро",
+      "Фра Альбериго",
+      "Гвидо дель Дука",
+      "Пётр Дамиани",
+      "Гвидо Новелло да Полента",
+    ],
+  },
+  {
+    group: "Север Италии",
+    names: [
+      "Сорделло да Гоито",
+      "Кангранде делла Скала",
+      "Кунисса да Романо",
+      "Марко Ломбардец",
+      "Мастер Адамо",
+      "Гвидо Гвиницелли",
+      "Венедико Каччанемико",
+    ],
+  },
+  {
+    group: "Юг Италии и Сицилия",
+    names: [
+      "Манфред Сицилийский",
+      "Констанция Сицилийская",
+      "Пьер делла Винья",
+      "Лючия Сиракузская",
+      "Карл Мартелл",
+      "Фома Аквинский",
+    ],
+  },
+  {
+    group: "Франция и Прованс",
+    names: [
+      "Арнаут Даниэль",
+      "Бертран де Борн",
+      "Фолько Марсельский",
+      "Гуго Капет",
+      "Бернард Клервоский",
+    ],
+  },
+  {
+    group: "Античность",
+    // The virtuous pagans of Limbo
+    about: /Лимба/,
+    names: [
+      "Публий Вергилий Марон",
+      "Публий Папиний Стаций",
+      "Улисс Итакийский",
+      "Катон Утический",
+      "Юстиниан",
+      "Харон",
+      "Минос",
+      "Флегий",
+      "Хирон",
+    ],
+  },
 ];
 
-export function groupsFor(name: string, about: string | null) {
-  return GROUP_RULES.filter(
-    (rule) => rule.names?.includes(name) || (about !== null && rule.about?.test(about)),
-  ).map((rule) => rule.group);
+export function groupsFor({ name, about, howWeMet }: SeedGroupContact) {
+  const told = (rule: GroupRule) =>
+    rule.names?.includes(name) ||
+    rule.surnames?.some((surname) => name.endsWith(` ${surname}`)) ||
+    (about !== null && rule.about?.test(about));
+  const met = (rule: GroupRule) => howWeMet !== null && rule.howWeMet?.test(howWeMet);
+
+  const realms = REALM_RULES.filter(told);
+  return [
+    ...(realms.length > 0 ? realms : REALM_RULES.filter(met)),
+    ...GROUP_RULES.filter((rule) => told(rule) || met(rule)),
+  ].map((rule) => rule.group);
 }
