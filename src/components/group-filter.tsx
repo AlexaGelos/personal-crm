@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Plus, Settings } from "lucide-react";
 
+import { GroupRow } from "@/components/group-row";
 import { Button } from "@/components/ui/button";
 import { listGroups } from "@/lib/groups";
 import { selectedGroup } from "@/lib/selected-group";
 
 // The row of groups under the heading: "Все", the groups by name, "Настроить группы".
+// The links are made here, on the server; GroupRow decides how many are in sight.
 // A group is a link to /?group=<id>; the selected one looks like the pressed frequency button.
 // The search text stays, the list length and the "Пора связаться" expansion start over
 export async function GroupFilter({
@@ -39,23 +41,29 @@ export async function GroupFilter({
     );
   }
 
+  // Two lines at most, the rest behind «Ещё N»: GroupRow measures what fits
   return (
-    <nav aria-label="Группы" className="flex flex-wrap gap-1.5">
-      <GroupLink href={href()} current={selected === null}>
-        Все
-      </GroupLink>
-      {groups.map((group) => (
-        <GroupLink key={group.id} href={href(group.id)} current={selected?.id === group.id}>
-          {group.name}
-        </GroupLink>
-      ))}
-      <Button asChild variant="ghost">
-        <Link href="/groups">
-          <Settings aria-hidden />
-          Настроить группы
-        </Link>
-      </Button>
-    </nav>
+    <GroupRow
+      items={[
+        <GroupLink key="all" href={href()} current={selected === null}>
+          Все
+        </GroupLink>,
+        ...groups.map((group) => (
+          <GroupLink key={group.id} href={href(group.id)} current={selected?.id === group.id}>
+            {group.name}
+          </GroupLink>
+        )),
+      ]}
+      selected={selected === null ? 0 : groups.findIndex((group) => group.id === selected.id) + 1}
+      settings={
+        <Button asChild variant="ghost">
+          <Link href="/groups">
+            <Settings aria-hidden />
+            Настроить группы
+          </Link>
+        </Button>
+      }
+    />
   );
 }
 
