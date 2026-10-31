@@ -38,7 +38,8 @@ for (const width of [320, 390]) {
       }
     }
 
-    // No word of a name breaks in the middle: the longest one fits next to the buttons
+    // No word of a name breaks in the middle: the longest one fits next to the buttons, 4px to
+    // spare, as some systems draw the font a little wider (the CI on Linux does)
     const brokenWords = await page.evaluate(() => {
       const probe = document.createElement("span");
       probe.style.cssText = "position: absolute; visibility: hidden; white-space: nowrap";
@@ -48,7 +49,7 @@ for (const width of [320, 390]) {
           probe.className = name.className;
           return name.textContent!.split(" ").filter((word) => {
             probe.textContent = word;
-            return probe.getBoundingClientRect().width > name.getBoundingClientRect().width;
+            return probe.getBoundingClientRect().width + 4 > name.getBoundingClientRect().width;
           });
         },
       );

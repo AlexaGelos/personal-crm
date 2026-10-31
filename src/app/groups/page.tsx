@@ -66,8 +66,8 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
     // The 1px gaps between rows show the list background as row lines
     <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-card border bg-row-line">
       {groups.map((group) => (
-        // Below 360px a bit less padding and a smaller name: the longest word («Флорентийцы»)
-        // still fits next to the buttons instead of breaking in the middle
+        // Below 360px less padding, tighter gaps and a smaller name: the longest word
+        // («Флорентийцы») fits next to the buttons, with room for fonts drawn a bit wider elsewhere
         <li key={group.id} className="bg-card px-4 py-3.5 max-[22.5rem]:px-3 sm:px-5">
           {group.id === editingId ? (
             <GroupNameForm
@@ -80,7 +80,7 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
             />
           ) : (
             // One line on any screen: on a phone the buttons are bare icons, so the list stays short
-            <div className="flex items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center justify-between gap-3 max-[22.5rem]:gap-2 sm:gap-4">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <Link
                   href={`/?group=${group.id}`}
@@ -92,7 +92,7 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
                   {pluralize(group.contactCount, CONTACT_FORMS)}
                 </span>
               </div>
-              <div className="flex flex-none gap-1.5 sm:gap-2">
+              <div className="flex flex-none gap-1.5 max-[22.5rem]:gap-1 sm:gap-2">
                 <Button asChild variant="outline" className={ICON_ON_PHONE}>
                   <Link href={`/groups?edit=${group.id}`}>
                     <Pencil aria-hidden />
