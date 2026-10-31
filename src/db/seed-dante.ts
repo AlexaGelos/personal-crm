@@ -2,18 +2,18 @@
 // pnpm db:seed:dante. Only adds, never changes or deletes; runs once: if Virgil is
 // already in the database, no contacts are added. Then the same for the groups of these
 // contacts: they are added once too, also to contacts that are already there.
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { databaseConfig, loadLocalEnv } from "./config";
-import { contactGroups, contacts, groups, notes } from "./schema";
+import { contacts, notes } from "./schema";
 import {
   ABOUT,
   CHARACTERS,
   EMAIL_DOMAINS,
   FEMALE_NAMES,
-  GROUPS,
+  GROUPS_MARKER,
   groupsFor,
   HOW_WE_MET,
   MALE_NAMES,
@@ -21,7 +21,7 @@ import {
   SURNAMES,
 } from "./seed-dante-data";
 import type { Gender } from "./seed-data";
-import { chunk, createRandom } from "./seed-tools";
+import { addSeedGroups, chunk, createRandom } from "./seed-tools";
 
 const CONTACT_COUNT = 500;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -171,49 +171,18 @@ async function addContacts(db: Database, generated: SeedContact[], now: number) 
 
 // Groups go to the Divine Comedy contacts that are in the database, whether this run added them
 // or an earlier one did. The generator is seeded, so "generated" holds the same names and "Кто это"
-// as when the contacts were added
+// as when the contacts were added. Groups from an earlier run stay and get the new members too
 async function addGroups(db: Database, generated: SeedContact[]) {
-  const added = await db.$count(groups, eq(groups.name, GROUPS[0]));
-  if (added > 0) {
-    console.log("The Divine Comedy groups are already in the database: no groups were added.");
-    return;
-  }
-
-  const result = await db.transaction(async (tx) => {
-    const groupRows = await tx
-      .insert(groups)
-      .values(GROUPS.map((name) => ({ name })))
-      .returning({ id: groups.id, name: groups.name });
-    const groupIdByName = new Map(groupRows.map((row) => [row.name, row.id]));
-
-    // A contact of the owner with the same name but another "Кто это" is not ours
-    const wanted = new Map(generated.map((contact) => [contact.name, contact.about ?? null]));
-    const rows: { id: number; name: string; about: string | null }[] = [];
-    for (const part of chunk([...wanted.keys()], 500)) {
-      rows.push(
-        ...(await tx
-          .select({ id: contacts.id, name: contacts.name, about: contacts.about })
-          .from(contacts)
-          .where(inArray(contacts.name, part))),
-      );
-    }
-
-    const links = rows
-      .filter((row) => wanted.get(row.name) === row.about)
-      .flatMap((row) =>
-        groupsFor(row.name, row.about).map((group) => ({
-          contactId: row.id,
-          groupId: groupIdByName.get(group)!,
-        })),
-      );
-    for (const part of chunk(links, 500)) {
-      await tx.insert(contactGroups).values(part);
-    }
-    return { groupCount: groupRows.length, linkCount: links.length };
+  const result = await addSeedGroups(db, {
+    marker: GROUPS_MARKER,
+    seeded: generated.map((contact) => ({ name: contact.name, about: contact.about ?? null })),
+    groupsFor,
   });
 
   console.log(
-    `Added ${result.groupCount} Divine Comedy groups and put contacts into them ${result.linkCount} times.`,
+    result === null
+      ? "The Divine Comedy groups are already in the database: no groups were added."
+      : `Added ${result.groupCount} Divine Comedy groups and put contacts into groups ${result.linkCount} times.`,
   );
 }
 

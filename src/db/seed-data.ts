@@ -1,5 +1,7 @@
 // Word lists for generating realistic test contacts (seed.ts)
 
+import type { SeedGroupContact } from "./seed-tools";
+
 export type Gender = "male" | "female";
 
 // [male form, female form]; a plain string is the same for both
@@ -355,6 +357,74 @@ export const HOW_WE_MET = [
   "Соседи по даче в Подмосковье",
   "Обращались за услугой, потом подружились",
 ];
+
+// Marks "groups are added": it always gets contacts, and the owner is unlikely
+// to make a group with exactly this name
+export const GROUPS_MARKER = "Конференции и митапы";
+
+type GroupRule = {
+  group: string;
+  // Matches the "Кто это" text of a contact
+  about?: RegExp;
+  // Matches "Как познакомились"
+  howWeMet?: RegExp;
+};
+
+// A contact gets every group whose rule fits, so many are in two or three groups
+const GROUP_RULES: GroupRule[] = [
+  { group: "Семья", about: /родственни|Крёстн/ },
+  {
+    group: "Друзья детства",
+    about: /детства/,
+    howWeMet: /Родители дружат с детства|летнем лагере/,
+  },
+  { group: "Школа", about: /Одноклассни/, howWeMet: /партой в школе/ },
+  { group: "Университет", about: /Однокурсни/, howWeMet: /в университете/ },
+  {
+    group: "Работа",
+    // Not "Руководитель отдела продаж": only a former boss
+    about: /Бывш(ий|ая) (коллега|руковод)|стаж[её]р/,
+    howWeMet: /первой компании|прошлой работе|общим проектом|собеседовании/,
+  },
+  {
+    group: "IT",
+    about:
+      /интерфейсов|разработ|Продакт|Аналитик данных|IT-компании|QA-инженер|DevOps|Директор по продукту/,
+  },
+  {
+    group: GROUPS_MARKER,
+    about: /организует конференции/,
+    howWeMet: /конференции|митапе|хакатоне/,
+  },
+  { group: "Соседи", about: /Сосед/, howWeMet: /Соседи|чате жильцов/ },
+  {
+    group: "Спорт",
+    about: /Тренер|йоге|пробежкам/,
+    howWeMet: /спортзале|йогой|футбол|марафоне/,
+  },
+  { group: "Путешествия", howWeMet: /походе|Грузию|поезде|самолёте/ },
+  { group: "Курсы и клубы", howWeMet: /курсы|курсах|книжном клубе/ },
+  { group: "Родительский чат", about: /в школе у сына/, howWeMet: /родительском чате/ },
+  { group: "Врачи", about: /[Вв]рач|Стоматолог|Ортопед|Психолог|Ветеринар/ },
+  {
+    group: "Мастера и услуги",
+    about:
+      /Юрист|Бухгалтер|Риелтор|Фотограф|Автомеханик|Мастер по ремонту|Финансовый консультант|Страховой агент|Нотариус|Парикмахер|Массажист|Флорист|Переводчик/,
+    howWeMet: /за услугой/,
+  },
+  {
+    group: "Через знакомых",
+    howWeMet: /общих друзей|свадьбе у друзей|Порекомендовали знакомые/,
+  },
+];
+
+export function groupsFor({ about, howWeMet }: SeedGroupContact) {
+  return GROUP_RULES.filter(
+    (rule) =>
+      (about !== null && rule.about?.test(about)) ||
+      (howWeMet !== null && rule.howWeMet?.test(howWeMet)),
+  ).map((rule) => rule.group);
+}
 
 export const EMAIL_DOMAINS = [
   "gmail.com",
