@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 
 import { createGroup, deleteGroup, renameGroup } from "@/app/actions";
 import { BackLink } from "@/components/back-link";
@@ -16,6 +17,10 @@ import { parseGroupId } from "@/lib/validation";
 export const metadata: Metadata = {
   title: "Группы",
 };
+
+// "Переименовать" and "Удалить" on a phone: a finger-sized square with only the icon; the words
+// stay for screen readers. The padding of a button with an icon is beaten by "!"
+const ICON_ON_PHONE = "max-sm:size-11 max-sm:gap-0 max-sm:p-0!";
 
 export default function GroupsPage({ searchParams }: PageProps<"/groups">) {
   return (
@@ -61,7 +66,9 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
     // The 1px gaps between rows show the list background as row lines
     <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-card border bg-row-line">
       {groups.map((group) => (
-        <li key={group.id} className="bg-card px-4 py-3.5 sm:px-5">
+        // Below 360px a bit less padding and a smaller name: the longest word («Флорентийцы»)
+        // still fits next to the buttons instead of breaking in the middle
+        <li key={group.id} className="bg-card px-4 py-3.5 max-[22.5rem]:px-3 sm:px-5">
           {group.id === editingId ? (
             <GroupNameForm
               action={renameGroup.bind(null, group.id)}
@@ -72,12 +79,12 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
               autoFocus
             />
           ) : (
-            // The buttons wrap under the name on narrow screens instead of squeezing it
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-              <div className="flex min-w-0 flex-1 basis-48 flex-col gap-0.5">
+            // One line on any screen: on a phone the buttons are bare icons, so the list stays short
+            <div className="flex items-center justify-between gap-3 sm:gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <Link
                   href={`/?group=${group.id}`}
-                  className="font-heading text-xl leading-tight font-medium break-words text-heading transition-colors duration-400 outline-none hover:text-glow-text focus-visible:underline"
+                  className="font-heading text-xl leading-tight font-medium break-words max-[22.5rem]:text-lg text-heading transition-colors duration-400 outline-none hover:text-glow-text focus-visible:underline"
                 >
                   {group.name}
                 </Link>
@@ -85,16 +92,16 @@ async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">[
                   {pluralize(group.contactCount, CONTACT_FORMS)}
                 </span>
               </div>
-              {/* On phones the two buttons share the full row; they wrap if even that is too narrow */}
-              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-none sm:flex-nowrap">
-                <Button asChild variant="outline" className="flex-1 px-3 sm:flex-none sm:px-5">
+              <div className="flex flex-none gap-1.5 sm:gap-2">
+                <Button asChild variant="outline" className={ICON_ON_PHONE}>
                   <Link href={`/groups?edit=${group.id}`}>
-                    Переименовать
+                    <Pencil aria-hidden />
+                    <span className="max-sm:sr-only">Переименовать</span>
                     <span className="sr-only"> группу «{group.name}»</span>
                   </Link>
                 </Button>
                 <DeleteGroupButton
-                  className="flex-1 px-3 sm:flex-none sm:px-5"
+                  className={ICON_ON_PHONE}
                   groupName={group.name}
                   action={deleteGroup.bind(null, group.id)}
                 />

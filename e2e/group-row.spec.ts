@@ -3,50 +3,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { addGroup, clearDatabase, closeDatabase } from "./database";
-
-// The groups of the test data
-const MANY = [
-  "IT",
-  "Ад",
-  "Античность",
-  "Белые гвельфы",
-  "Битва при Кампальдино",
-  "Врачи",
-  "Гибеллины",
-  "Друзья детства",
-  "Друзья юности",
-  "Изгнание",
-  "Конференции и митапы",
-  "Курсы и клубы",
-  "Мастера и услуги",
-  "Пизанцы",
-  "Пистойцы",
-  "Поэты",
-  "Правители",
-  "Проводники",
-  "Путешествия",
-  "Работа",
-  "Рай",
-  "Родительский чат",
-  "Родня Алигьери",
-  "Романья",
-  "Святые и духовенство",
-  "Север Италии",
-  "Семья",
-  "Сиенцы",
-  "Соседи",
-  "Спорт",
-  "Стражи",
-  "Университет",
-  "Флорентийцы",
-  "Франция и Прованс",
-  "Художники",
-  "Через знакомых",
-  "Чёрные гвельфы",
-  "Чистилище",
-  "Школа",
-  "Юг Италии и Сицилия",
-];
+import { MANY_GROUPS } from "./groups";
 
 const WIDTHS = [320, 390, 768, 1280];
 
@@ -72,7 +29,7 @@ for (const width of WIDTHS) {
   test(`at ${width}px many groups take two lines, «Ещё» opens and closes the rest`, async ({
     page,
   }) => {
-    for (const name of MANY) await addGroup(name);
+    for (const name of MANY_GROUPS) await addGroup(name);
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
 
@@ -86,10 +43,10 @@ for (const width of WIDTHS) {
     const hidden = Number((await more.textContent())!.match(/\d+/)![0]);
     const shown = (await row.getByRole("link").count()) - 1;
     expect(shown).toBeGreaterThan(0);
-    expect(shown + hidden).toBe(MANY.length);
+    expect(shown + hidden).toBe(MANY_GROUPS.length);
 
     await more.click();
-    for (const name of MANY) {
+    for (const name of MANY_GROUPS) {
       await expect(row.getByRole("link", { name, exact: true })).toBeVisible();
     }
     await expect(row.getByRole("link", { name: "Настроить группы" })).toBeVisible();
@@ -102,7 +59,7 @@ for (const width of WIDTHS) {
 
 test("a chosen group from the hidden part opens the whole row", async ({ page }) => {
   const groups = [];
-  for (const name of MANY) groups.push(await addGroup(name));
+  for (const name of MANY_GROUPS) groups.push(await addGroup(name));
   const last = groups.find((group) => group.name === "Юг Италии и Сицилия")!;
   await page.setViewportSize({ width: 390, height: 900 });
 
