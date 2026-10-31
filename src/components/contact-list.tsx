@@ -112,7 +112,9 @@ export async function ContactList({
                   key={contact.id}
                   className="group/row relative hover:bg-transparent [&>td:first-child]:bg-no-repeat hover:[&>td:first-child]:bg-(image:--glow-row)"
                 >
-                  <TableCell className="py-2.5 pl-6">
+                  {/* Below sm the name is the only column: exactly the screen wide,
+                      a long name goes onto a second line instead of past the edge */}
+                  <TableCell className="py-2.5 pl-6 max-sm:w-full max-sm:max-w-0">
                     <div className="flex items-center gap-3.5">
                       <Avatar
                         name={contact.name}
@@ -121,7 +123,7 @@ export async function ContactList({
                       <div className="flex min-w-0 flex-col">
                         <Link
                           href={`/contacts/${contact.id}`}
-                          className="font-heading text-xl font-medium text-heading transition-colors duration-400 outline-none group-hover/row:text-glow-text after:absolute after:inset-0 focus-visible:underline"
+                          className="font-heading text-xl font-medium text-heading transition-colors duration-400 outline-none group-hover/row:text-glow-text after:absolute after:inset-0 focus-visible:underline max-sm:[overflow-wrap:anywhere] max-sm:whitespace-normal"
                         >
                           {contact.name}
                         </Link>
@@ -134,7 +136,9 @@ export async function ContactList({
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden max-w-72 truncate text-muted-foreground md:table-cell">
+                  {/* Takes the room the other columns leave and gives it up first, cut short
+                      with "…": the table never grows wider than its frame */}
+                  <TableCell className="hidden w-full max-w-0 truncate text-muted-foreground md:table-cell">
                     {contact.about}
                   </TableCell>
                   <TableCell className="hidden text-soft-foreground tabular-nums sm:table-cell">
