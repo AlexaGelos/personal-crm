@@ -34,7 +34,8 @@ export function DeleteGroupButton({
       <AlertDialogTrigger asChild>
         <Button variant="destructive" className={className}>
           <Trash2 aria-hidden />
-          Удалить
+          {/* On a phone only the bin is seen: the groups page keeps each group on one line */}
+          <span className="max-sm:sr-only">Удалить</span>
           <span className="sr-only"> группу «{groupName}»</span>
         </Button>
       </AlertDialogTrigger>
