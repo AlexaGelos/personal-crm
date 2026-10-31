@@ -289,3 +289,24 @@ test("the block shows the five most overdue, all of them on request, only the ch
   await page.getByRole("searchbox").fill("");
   await expect(blockNames(page)).toHaveText(allOverdue.slice(0, 5));
 });
+
+test("on a narrow phone the overdue days stay clear of «Связались»", async ({ page }) => {
+  await addOverdue("Буонконте да Монтефельтро", 125, {
+    about: "Гибеллин, павший при Кампальдино",
+  });
+
+  for (const width of [320, 360, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    const days = block(page).getByText(formatOverdue(125));
+    const button = block(page).getByRole("button", {
+      name: "Связались — Буонконте да Монтефельтро",
+    });
+    await expect(days).toBeVisible();
+
+    const daysBox = (await days.boundingBox())!;
+    const buttonBox = (await button.boundingBox())!;
+    // Soft: one run reports every width where the days run under the button
+    expect.soft(daysBox.x + daysBox.width, `at ${width}px`).toBeLessThanOrEqual(buttonBox.x);
+  }
+});

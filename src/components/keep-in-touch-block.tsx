@@ -87,7 +87,8 @@ export function KeepInTouchBlock({
                       {row.name}
                     </Link>
                     <div className="flex min-w-0 gap-1.5 text-[0.8125rem] leading-snug md:contents md:text-sm">
-                      <span className="flex-none whitespace-nowrap text-rose md:order-1">
+                      {/* On the narrowest phones the days go onto a second line, not under the button */}
+                      <span className="text-rose md:order-1 md:whitespace-nowrap">
                         {formatOverdue(row.overdueDays)}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-muted-foreground">
