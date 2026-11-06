@@ -107,6 +107,27 @@ export function groupNameKey(name: string) {
   return name.replace(/ё/g, "е").replace(/Ё/g, "Е").toLocaleLowerCase("ru");
 }
 
+// Shown on the login page, so they stay in Russian
+export const LOGIN_EMAIL_INVALID = "Проверь адрес почты";
+export const LOGIN_TOO_OFTEN = "Слишком часто, попробуй через несколько минут";
+
+// The address as it is stored and compared everywhere: no spaces at the edges, lower case.
+// The form and the server check it the same way, so a request that bypasses the form gets
+// no further than a typed one
+export const loginEmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254, LOGIN_EMAIL_INVALID)
+  .pipe(z.email(LOGIN_EMAIL_INVALID));
+
+// The login form: the typed address comes back after an error; sentTo is set once the email is sent
+export type LoginFormState = {
+  email?: string;
+  error?: string;
+  sentTo?: string;
+};
+
 export const frequencySchema = z
   .enum(frequencyChoices)
   .transform((value): ContactFrequency | null => (value === "none" ? null : value));

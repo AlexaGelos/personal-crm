@@ -9,13 +9,29 @@ x-logging: &logging
     max-size: 10m
     max-file: "3"
 
-# TZ: pages show dates and times in this zone, the same as on the owner's computer
+# TZ: pages show dates and times in this zone, the same as on the owner's computer.
+# Login and email: what is not a secret is written here in the file, as TZ is; the secrets come
+# from .env. The same image runs everywhere, only these settings tell it where to send emails:
+# Resend over SMTP here, the Mailpit stand-in on the owner's computer.
+# A missing line in .env stops docker compose with the message below, before anything changes
 x-app-environment: &app-environment
   TZ: Europe/Moscow
   POSTGRES_HOST: db
   POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
   POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+  # The address the app is opened on: links in the emails lead there
+  BETTER_AUTH_URL: https://app.crmgelos.ru
+  # Signs the login cookie. Generated once on the server: openssl rand -base64 32
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
+  # Resend: the login is always "resend", the password is the API key. If the server does not let
+  # port 465 out, 2465 works too: change SMTP_PORT here, nothing else
+  SMTP_HOST: smtp.resend.com
+  SMTP_PORT: "465"
+  SMTP_SECURE: "true"
+  SMTP_USER: resend
+  SMTP_PASSWORD: ${SMTP_PASSWORD:?set SMTP_PASSWORD in .env (the Resend API key)}
+  EMAIL_FROM: noreply@mail.crm.crmgelos.ru
 
 services:
   db:
@@ -41,7 +57,11 @@ services:
   migrate:
     image: ${APP_IMAGE:?run deploy.sh, it sets APP_IMAGE}
     command: ["node", "tools/db/migrate.js"]
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      # Only here, only this container: migration 0003 gives the data that existed before login to
+      # the user with this email (it is not written in the repository, which is public)
+      OWNER_EMAIL: ${OWNER_EMAIL:?set OWNER_EMAIL in .env (the email of the owner of the existing data)}
     depends_on:
       db:
         condition: service_healthy

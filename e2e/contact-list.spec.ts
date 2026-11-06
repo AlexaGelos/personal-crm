@@ -2,10 +2,13 @@
 // never push the table past its frame, so there is no sideways scrollbar
 import { expect, test } from "@playwright/test";
 
+import { signIn } from "./auth";
 import { addContact, addGroup, addToGroup, clearDatabase, closeDatabase } from "./database";
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
   await clearDatabase();
+  // A real login before every test: the app is closed to those who are not in
+  await signIn(page);
 });
 
 test.afterAll(async () => {

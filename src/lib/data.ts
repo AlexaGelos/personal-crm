@@ -50,27 +50,40 @@ function searchCondition(query: string): SQL | undefined {
   return or(...conditions);
 }
 
-// Only the contacts of the group; without a group - no condition
-function groupCondition(groupId: number | undefined): SQL | undefined {
+// Only the contacts of the group; without a group - no condition. The group must be the
+// user's own: a number of somebody else's group matches nothing
+function groupCondition(userId: string, groupId: number | undefined): SQL | undefined {
   if (groupId === undefined) return undefined;
 
   return exists(
     db
       .select({ one: sql`1` })
       .from(contactGroups)
-      .where(and(eq(contactGroups.contactId, contacts.id), eq(contactGroups.groupId, groupId))),
+      .innerJoin(groups, eq(groups.id, contactGroups.groupId))
+      .where(
+        and(
+          eq(contactGroups.contactId, contacts.id),
+          eq(contactGroups.groupId, groupId),
+          eq(groups.userId, userId),
+        ),
+      ),
   );
 }
 
-export async function listContacts({
-  query,
-  limit,
-  groupId,
-}: {
-  query: string;
-  limit: number;
-  groupId?: number;
-}) {
+// Every query of this file starts from the user: the data of another user never gets into an
+// answer, whatever numbers the request carries
+export async function listContacts(
+  userId: string,
+  {
+    query,
+    limit,
+    groupId,
+  }: {
+    query: string;
+    limit: number;
+    groupId?: number;
+  },
+) {
   return db
     .select({
       id: contacts.id,
@@ -84,19 +97,24 @@ export async function listContacts({
         .select({ name: groups.name })
         .from(contactGroups)
         .innerJoin(groups, eq(groups.id, contactGroups.groupId))
-        .where(eq(contactGroups.contactId, contacts.id))
+        .where(and(eq(contactGroups.contactId, contacts.id), eq(groups.userId, userId)))
         .orderBy(asc(groups.name), asc(groups.id))})`,
     })
     .from(contacts)
-    .where(and(searchCondition(query), groupCondition(groupId)))
+    .where(
+      and(eq(contacts.userId, userId), searchCondition(query), groupCondition(userId, groupId)),
+    )
     .orderBy(asc(contacts.name), asc(contacts.id))
     .limit(limit);
 }
 
 // Counts contacts matching the query, in the group if there is one;
 // an empty query counts all of them
-export async function countContacts(query = "", groupId?: number) {
-  return db.$count(contacts, and(searchCondition(query), groupCondition(groupId)));
+export async function countContacts(userId: string, query = "", groupId?: number) {
+  return db.$count(
+    contacts,
+    and(eq(contacts.userId, userId), searchCondition(query), groupCondition(userId, groupId)),
+  );
 }
 
 // When it's time to get in touch, counted by the database for the card and the home block alike.
@@ -128,18 +146,18 @@ function keepInTouchFields() {
   };
 }
 
-export async function getContact(id: number) {
+export async function getContact(userId: string, id: number) {
   const [contact] = await db
     .select({ ...getTableColumns(contacts), ...keepInTouchFields() })
     .from(contacts)
-    .where(eq(contacts.id, id));
+    .where(and(eq(contacts.id, id), eq(contacts.userId, userId)));
   return contact;
 }
 
 // Overdue contacts, the most overdue first; without a limit - all of them. With a group - only
 // the contacts of that group. Every row also carries the number of all overdue contacts
 // (of the group, if there is one)
-export async function listOverdueContacts(limit?: number, groupId?: number) {
+export async function listOverdueContacts(userId: string, limit?: number, groupId?: number) {
   const { overdueDays } = keepInTouchFields();
   const due = db
     .select({
@@ -150,7 +168,13 @@ export async function listOverdueContacts(limit?: number, groupId?: number) {
       overdueDays: overdueDays.as("overdue_days"),
     })
     .from(contacts)
-    .where(and(isNotNull(contacts.contactFrequency), groupCondition(groupId)))
+    .where(
+      and(
+        eq(contacts.userId, userId),
+        isNotNull(contacts.contactFrequency),
+        groupCondition(userId, groupId),
+      ),
+    )
     .as("due");
 
   const query = db
@@ -169,10 +193,12 @@ export async function listOverdueContacts(limit?: number, groupId?: number) {
   return limit === undefined ? query : query.limit(limit);
 }
 
-export async function listNotes(contactId: number) {
+// The notes belong to the owner of the contact: of a foreign contact there are none to give
+export async function listNotes(userId: string, contactId: number) {
   return db
-    .select()
+    .select(getTableColumns(notes))
     .from(notes)
-    .where(eq(notes.contactId, contactId))
+    .innerJoin(contacts, eq(contacts.id, notes.contactId))
+    .where(and(eq(notes.contactId, contactId), eq(contacts.userId, userId)))
     .orderBy(desc(notes.createdAt), desc(notes.id));
 }

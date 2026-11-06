@@ -19,5 +19,19 @@ services:
       timeout: 5s
       retries: 10
 
+  # Stand-in for the mail service: catches every login email, nothing leaves the computer.
+  # SMTP on 1025, web page with the caught emails on http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    restart: unless-stopped
+    environment:
+      # Without this Mailpit looks up the name of every client before it greets it, and the
+      # lookup of the Docker gateway address hangs: the app waits for the greeting in vain
+      MP_SMTP_DISABLE_RDNS: "true"
+    ports:
+      # Bound to localhost only, like the database
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
 volumes:
   pgdata:

@@ -6,10 +6,13 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { formatDay, formatOverdue } from "@/lib/format";
 import { addDays, addMonths, daysBetween, onDay, today } from "@/test/days";
+import { signIn } from "./auth";
 import { addContact, addGroup, addToGroup, clearDatabase, closeDatabase } from "./database";
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
   await clearDatabase();
+  // A real login before every test: the app is closed to those who are not in
+  await signIn(page);
 });
 
 test.afterAll(async () => {
@@ -59,6 +62,7 @@ test("the frequency is set in the card with one press, kept and cleared", async 
   const otherBrowser = await browser.newContext();
   try {
     const other = await otherBrowser.newPage();
+    await signIn(other);
     await other.goto(`/contacts/${boris.id}`);
     await expect(
       other

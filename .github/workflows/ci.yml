@@ -60,6 +60,15 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Stand-in for the mail service: the tests read the login emails from it
+      mailpit:
+        image: axllent/mailpit:v1.33.0
+        env:
+          # No lookup of client names before the greeting: it can hang and the tests wait in vain
+          MP_SMTP_DISABLE_RDNS: "true"
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       POSTGRES_USER: ci
       POSTGRES_PASSWORD: ci

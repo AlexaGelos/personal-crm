@@ -1,10 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 
 import { switchToTestDatabase } from "./src/test/database-name";
+import { applyTestSettings, E2E_PORT } from "./src/test/test-settings";
 
 // The app under test talks to its own database, never to the working one.
 // Set here, so the web server below and the tests (e2e/database.ts) both get it
 switchToTestDatabase("e2e");
+
+// Mail goes to the Mailpit stand-in whatever .env says; the app and the tests both read these
+applyTestSettings();
 
 // The zone the server shows dates in (TZ in deploy/compose.yaml), for the app and the tests alike:
 // the tests count the expected due dates with the app's own functions
@@ -12,7 +16,7 @@ const TIME_ZONE = "Europe/Moscow";
 process.env.TZ = TIME_ZONE;
 
 // Not 3000: a dev server or "pnpm start" on the working database may already be there
-const PORT = 3100;
+const PORT = E2E_PORT;
 
 export default defineConfig({
   testDir: "./e2e",

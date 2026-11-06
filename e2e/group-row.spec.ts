@@ -2,13 +2,16 @@
 // not fit hide behind «Ещё N», which opens the whole row in place
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { signIn } from "./auth";
 import { addGroup, clearDatabase, closeDatabase } from "./database";
 import { MANY_GROUPS } from "./groups";
 
 const WIDTHS = [320, 390, 768, 1280];
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
   await clearDatabase();
+  // A real login before every test: the app is closed to those who are not in
+  await signIn(page);
 });
 
 test.afterAll(async () => {

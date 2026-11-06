@@ -8,6 +8,7 @@ import { ContactForm } from "@/components/contact-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContact } from "@/lib/data";
 import { listContactGroups, listGroups } from "@/lib/groups";
+import { requireUserId } from "@/lib/session";
 import { parseContactId } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -25,13 +26,15 @@ export default function EditContactPage({ params }: PageProps<"/contacts/[id]/ed
 }
 
 async function EditContact({ params }: { params: PageProps<"/contacts/[id]/edit">["params"] }) {
+  const userId = await requireUserId();
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
+  // A contact of another user is not found, the same as one that does not exist
   const [contact, groups, contactGroups] = await Promise.all([
-    getContact(id),
-    listGroups(),
-    listContactGroups(id),
+    getContact(userId, id),
+    listGroups(userId),
+    listContactGroups(userId, id),
   ]);
   if (!contact) notFound();
 

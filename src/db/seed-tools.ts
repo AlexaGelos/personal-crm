@@ -1,8 +1,37 @@
 // Helpers shared by the test data scripts (seed.ts, seed-dante.ts)
-import { inArray, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
+
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
-import { contactGroups, contacts, groups } from "./schema";
+import { contactGroups, contacts, groups, users } from "./schema";
+
+// The user the test data belongs to: the one with the email from OWNER_EMAIL, made if there is
+// none yet. The same email handling as in migration 0003: no spaces at the edges, lower case.
+// Called first in a script, so that without the setting nothing is added
+export async function ensureOwner<TSchema extends Record<string, unknown>>(
+  db: PostgresJsDatabase<TSchema>,
+) {
+  const email = (process.env.OWNER_EMAIL ?? "").trim().toLowerCase();
+  if (!email) {
+    throw new Error(
+      "OWNER_EMAIL is not set: the test data belongs to the user with this email. Add OWNER_EMAIL to .env",
+    );
+  }
+  if (!/^[^@\s]+@[^@\s]+$/.test(email)) {
+    throw new Error(`OWNER_EMAIL is not an email address: "${email}"`);
+  }
+
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+  if (existing) return existing.id;
+
+  // The owner of the app typed this address in themselves: it counts as confirmed (as in the migration)
+  const [created] = await db
+    .insert(users)
+    .values({ id: randomUUID(), name: "", email, emailVerified: true })
+    .returning({ id: users.id });
+  return created.id;
+}
 
 // Deterministic PRNG (mulberry32): the same seed always produces the same data
 export function createRandom(seed: number) {
@@ -34,9 +63,11 @@ const groupNameKey = (name: string) =>
 // is done, so the marker must be a group that always gets contacts. Only the script's own
 // contacts are touched: the generated name with the generated "Кто это". A group is made only
 // when somebody goes into it; a group the owner has under the same name is used as it is.
-// The groups a contact is already in stay
+// The groups a contact is already in stay. Everything is looked for and made for the one user:
+// the contacts and groups of other users do not count and are not touched
 export async function addSeedGroups<TSchema extends Record<string, unknown>>(
   db: PostgresJsDatabase<TSchema>,
+  userId: string,
   {
     marker,
     seeded,
@@ -50,7 +81,7 @@ export async function addSeedGroups<TSchema extends Record<string, unknown>>(
   const [{ done }] = await db
     .select({ done: sql<boolean>`count(*) > 0` })
     .from(groups)
-    .where(inArray(nameKey, [groupNameKey(marker)]));
+    .where(and(eq(groups.userId, userId), inArray(nameKey, [groupNameKey(marker)])));
   if (done) return null;
 
   return db.transaction(async (tx) => {
@@ -67,7 +98,7 @@ export async function addSeedGroups<TSchema extends Record<string, unknown>>(
             howWeMet: contacts.howWeMet,
           })
           .from(contacts)
-          .where(inArray(contacts.name, part))),
+          .where(and(eq(contacts.userId, userId), inArray(contacts.name, part)))),
       );
     }
     const memberships = rows
@@ -79,7 +110,7 @@ export async function addSeedGroups<TSchema extends Record<string, unknown>>(
 
     const created = await tx
       .insert(groups)
-      .values(names.map((name) => ({ name })))
+      .values(names.map((name) => ({ userId, name })))
       .onConflictDoNothing()
       .returning({ id: groups.id });
     const groupIdByKey = new Map(
@@ -87,7 +118,7 @@ export async function addSeedGroups<TSchema extends Record<string, unknown>>(
         await tx
           .select({ id: groups.id, key: nameKey })
           .from(groups)
-          .where(inArray(nameKey, names.map(groupNameKey)))
+          .where(and(eq(groups.userId, userId), inArray(nameKey, names.map(groupNameKey))))
       ).map((group) => [group.key, group.id]),
     );
 

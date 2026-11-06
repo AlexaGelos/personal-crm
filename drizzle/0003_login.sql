@@ -1,0 +1,101 @@
+CREATE TABLE "accounts" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp with time zone,
+	"refresh_token_expires_at" timestamp with time zone,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "login_email_sends" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "login_email_sends_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"email" text NOT NULL,
+	"sent_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "sessions" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	CONSTRAINT "sessions_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verifications" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+DROP INDEX "groups_name_unique";--> statement-breakpoint
+-- The owner columns are added without NOT NULL first: the rows that exist get their owner
+-- below, and only then the columns become required
+ALTER TABLE "contacts" ADD COLUMN "user_id" text;--> statement-breakpoint
+ALTER TABLE "groups" ADD COLUMN "user_id" text;--> statement-breakpoint
+-- All data that existed before login goes to one user. Their email comes from the setting
+-- app.owner_email (OWNER_EMAIL, see src/db/run-migrations.ts): it is not written here, because
+-- this file is in a public repository. Drizzle applies all pending migrations in one
+-- transaction, so a failure below changes nothing
+DO $$
+DECLARE
+  owner_email text := lower(btrim(coalesce(current_setting('app.owner_email', true), ''), E' \t\r\n'));
+  owner_id text;
+BEGIN
+  -- Nothing to hand over: a new database needs no owner
+  IF NOT EXISTS (SELECT 1 FROM "contacts") AND NOT EXISTS (SELECT 1 FROM "groups") THEN
+    RETURN;
+  END IF;
+
+  IF owner_email = '' THEN
+    RAISE EXCEPTION 'OWNER_EMAIL is not set: the database has contacts or groups, and the migration needs the email of the user who gets them. Set OWNER_EMAIL and run the migration again.';
+  END IF;
+  IF owner_email !~ '^[^@[:space:]]+@[^@[:space:]]+$' THEN
+    RAISE EXCEPTION 'OWNER_EMAIL is not an email address: "%"', owner_email;
+  END IF;
+
+  -- The address is typed in by the owner of the app, so it counts as confirmed: otherwise the
+  -- login library would take the first login of this user for an unconfirmed account
+  owner_id := gen_random_uuid()::text;
+  INSERT INTO "users" ("id", "name", "email", "email_verified") VALUES (owner_id, '', owner_email, true);
+
+  UPDATE "contacts" SET "user_id" = owner_id;
+  UPDATE "groups" SET "user_id" = owner_id;
+END $$;
+--> statement-breakpoint
+ALTER TABLE "contacts" ALTER COLUMN "user_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "groups" ALTER COLUMN "user_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "accounts_user_id_idx" ON "accounts" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "login_email_sends_email_idx" ON "login_email_sends" USING btree ("email","sent_at");--> statement-breakpoint
+CREATE INDEX "sessions_user_id_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "verifications_identifier_idx" ON "verifications" USING btree ("identifier");--> statement-breakpoint
+ALTER TABLE "contacts" ADD CONSTRAINT "contacts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "groups" ADD CONSTRAINT "groups_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "contacts_user_id_idx" ON "contacts" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "groups_user_name_unique" ON "groups" USING btree ("user_id",lower(translate("name", 'ёЁ', 'еЕ')));

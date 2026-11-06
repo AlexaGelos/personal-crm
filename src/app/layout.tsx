@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Onest, Ponomar } from "next/font/google";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { Candlelight } from "@/components/candlelight";
 import { Chandelier } from "@/components/chandelier";
@@ -8,6 +9,7 @@ import { CursorLight } from "@/components/cursor-light";
 import { DemonHead } from "@/components/demon-head";
 import { Logo } from "@/components/logo";
 import { SideFlames } from "@/components/side-flames";
+import { UserMenu } from "@/components/user-menu";
 
 import "./globals.css";
 
@@ -73,7 +75,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link
               href="/"
               // Padding with negative margins: a finger-sized tap area, same layout
-              className="-mx-2 flex items-center gap-2 rounded-sm px-2 py-2.5 font-heading text-lg font-medium tracking-logo text-heading sm:gap-2.5 sm:text-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-3 lg:text-[1.375rem]"
+              className="-mx-2 flex flex-none items-center gap-2 rounded-sm px-2 py-2.5 whitespace-nowrap font-heading text-lg font-medium tracking-logo text-heading sm:gap-2.5 sm:text-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:gap-3 lg:text-[1.375rem]"
             >
               <Logo className="size-5 text-muted-foreground sm:size-5.5 lg:size-6" aria-hidden />
               Личная CRM
@@ -93,6 +95,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               className="absolute left-1/2 size-10 -translate-x-1/2 text-crimson"
               aria-hidden
             />
+            {/* The email and «Выйти» of the user, nothing on the login page. Its own Suspense:
+                the rest of the page does not wait for the session */}
+            <Suspense fallback={null}>
+              <UserMenu />
+            </Suspense>
           </div>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-5 pt-4 pb-12 md:pt-16 lg:px-10 lg:pb-20">

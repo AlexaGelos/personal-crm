@@ -14,6 +14,7 @@ import { ShowMoreButton } from "@/components/show-more-button";
 import { countContacts, listContacts } from "@/lib/data";
 import { CONTACT_FORMS, formatNumber, pluralize } from "@/lib/format";
 import { selectedGroup } from "@/lib/selected-group";
+import { requireUserId } from "@/lib/session";
 
 // Contacts shown on open and added by each "Показать ещё" click
 const PAGE_SIZE = 50;
@@ -39,15 +40,16 @@ export async function ContactList({
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
+  const userId = await requireUserId();
   const { q, limit: limitParam, due } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
   const limit = parseLimit(limitParam);
-  const group = await selectedGroup(searchParams);
+  const group = await selectedGroup(userId, searchParams);
   // With a group chosen everything below - the rows and both counts - is about its contacts only
   const [rows, total, matched] = await Promise.all([
-    listContacts({ query, limit, groupId: group?.id }),
-    countContacts("", group?.id),
-    query ? countContacts(query, group?.id) : null,
+    listContacts(userId, { query, limit, groupId: group?.id }),
+    countContacts(userId, "", group?.id),
+    query ? countContacts(userId, query, group?.id) : null,
   ]);
   const found = matched ?? total;
   const hasMore = rows.length < found;
@@ -64,11 +66,7 @@ export async function ContactList({
 
   if (total === 0) {
     return (
-      <EmptyState
-        candle="unlit"
-        title="Пока нет ни одного контакта"
-        hint="Нажмите «Добавить контакт», чтобы записать первого человека."
-      />
+      <EmptyState candle="unlit" title="Пока нет ни одного контакта" hint="Добавь первый контакт" />
     );
   }
 

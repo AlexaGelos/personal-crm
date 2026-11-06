@@ -2,6 +2,8 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "vitest/config";
 
+import { TEST_SETTINGS } from "./src/test/test-settings";
+
 const fromRoot = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
@@ -15,7 +17,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     // The zone the server shows dates in (TZ in deploy/compose.yaml): due dates depend on it
-    env: { TZ: "Europe/Moscow" },
+    // and the settings that keep every email in the Mailpit stand-in, whatever .env says
+    env: { TZ: "Europe/Moscow", ...TEST_SETTINGS },
     // One test database for everybody: the test files run one after another
     fileParallelism: false,
     globalSetup: ["./src/test/global-setup.ts"],
