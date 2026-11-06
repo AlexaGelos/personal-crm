@@ -1,11 +1,12 @@
 // Runs in every test file before its tests: points the app at the test database
-// and empties it before each test
+// and empties it before each test (then adds the default test user)
 import { sql } from "drizzle-orm";
 import { beforeEach } from "vitest";
 
 import { databaseConfig } from "@/db/config";
 import { db } from "@/db";
 import { assertTestDatabase, switchToTestDatabase } from "./database-name";
+import { createTestUser } from "./helpers";
 
 switchToTestDatabase();
 assertTestDatabase(databaseConfig().database);
@@ -18,11 +19,14 @@ beforeEach(async () => {
   const tables = await db.execute<{ name: string }>(
     sql`select quote_ident(tablename) as name from pg_tables where schemaname = 'public'`,
   );
-  if (tables.length === 0) return;
+  if (tables.length > 0) {
+    await db.execute(
+      sql.raw(
+        `truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`,
+      ),
+    );
+  }
 
-  await db.execute(
-    sql.raw(
-      `truncate table ${tables.map((table) => table.name).join(", ")} restart identity cascade`,
-    ),
-  );
+  // Every test starts with one user, as in a real database after the first login
+  await createTestUser();
 });

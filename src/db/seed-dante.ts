@@ -2,7 +2,7 @@
 // pnpm db:seed:dante. Only adds, never changes or deletes; runs once: if Virgil is
 // already in the database, no contacts are added. Then the same for the groups of these
 // contacts: they are added once too, also to contacts that are already there.
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -21,7 +21,7 @@ import {
   SURNAMES,
 } from "./seed-dante-data";
 import type { Gender } from "./seed-data";
-import { addSeedGroups, chunk, createRandom } from "./seed-tools";
+import { addSeedGroups, chunk, createRandom, ensureOwner } from "./seed-tools";
 
 const CONTACT_COUNT = 500;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -68,7 +68,7 @@ function noteCount() {
   return randomInt(4, 6);
 }
 
-type SeedContact = typeof contacts.$inferInsert & {
+type SeedContact = Omit<typeof contacts.$inferInsert, "userId"> & {
   name: string;
   createdAt: Date;
   noteBodies: string[];
@@ -121,8 +121,11 @@ function generateContacts(now: number): SeedContact[] {
 
 type Database = ReturnType<typeof drizzle>;
 
-async function addContacts(db: Database, generated: SeedContact[], now: number) {
-  const added = await db.$count(contacts, eq(contacts.name, CHARACTERS[0].name));
+async function addContacts(db: Database, userId: string, generated: SeedContact[], now: number) {
+  const added = await db.$count(
+    contacts,
+    and(eq(contacts.userId, userId), eq(contacts.name, CHARACTERS[0].name)),
+  );
   if (added > 0) {
     console.log("The Divine Comedy contacts are already in the database: no contacts were added.");
     return;
@@ -135,6 +138,7 @@ async function addContacts(db: Database, generated: SeedContact[], now: number) 
         .insert(contacts)
         .values(
           part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
+            userId,
             name,
             about,
             howWeMet,
@@ -172,8 +176,8 @@ async function addContacts(db: Database, generated: SeedContact[], now: number) 
 // Groups go to the Divine Comedy contacts that are in the database, whether this run added them
 // or an earlier one did. The generator is seeded, so "generated" holds the same names and "Кто это"
 // as when the contacts were added. Groups from an earlier run stay and get the new members too
-async function addGroups(db: Database, generated: SeedContact[]) {
-  const result = await addSeedGroups(db, {
+async function addGroups(db: Database, userId: string, generated: SeedContact[]) {
+  const result = await addSeedGroups(db, userId, {
     marker: GROUPS_MARKER,
     seeded: generated.map((contact) => ({ name: contact.name, about: contact.about ?? null })),
     groupsFor,
@@ -192,12 +196,15 @@ async function main() {
   const db = drizzle(sql);
 
   try {
+    // First of all: without OWNER_EMAIL the script stops before it adds anything
+    const userId = await ensureOwner(db);
+
     // Generated first and only once: the random numbers must come in the same order as always
     const now = Date.now();
     const generated = generateContacts(now);
 
-    await addContacts(db, generated, now);
-    await addGroups(db, generated);
+    await addContacts(db, userId, generated, now);
+    await addGroups(db, userId, generated);
   } finally {
     await sql.end();
   }

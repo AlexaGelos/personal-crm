@@ -1,11 +1,14 @@
 // Creates the test database if it is missing and brings it up to date with the
 // migrations from ./drizzle. Shared by Vitest and Playwright
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 import { databaseConfig } from "@/db/config";
+import { runMigrations } from "@/db/run-migrations";
 import { assertTestDatabase } from "./database-name";
+
+// The owner of the rows an old test run may have left in the database: migration 0003 needs
+// someone to hand them to. The tables are emptied before every test anyway
+export const TEST_OWNER_EMAIL = "owner@example.test";
 
 export async function prepareTestDatabase(testName: string) {
   assertTestDatabase(testName);
@@ -22,7 +25,7 @@ export async function prepareTestDatabase(testName: string) {
 
   const sql = postgres({ ...config, max: 1, onnotice: () => {} });
   try {
-    await migrate(drizzle(sql), { migrationsFolder: "drizzle" });
+    await runMigrations(sql, { ownerEmail: TEST_OWNER_EMAIL });
   } finally {
     await sql.end();
   }

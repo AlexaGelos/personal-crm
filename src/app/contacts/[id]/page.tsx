@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getContact, listNotes } from "@/lib/data";
 import { listContactGroups } from "@/lib/groups";
 import { formatDate, formatDateTime, formatDay, formatOverdue, pluralize } from "@/lib/format";
+import { requireUserId } from "@/lib/session";
 import { parseContactId } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -34,13 +35,15 @@ export default function ContactPage({ params }: PageProps<"/contacts/[id]">) {
 }
 
 async function ContactDetails({ params }: { params: PageProps<"/contacts/[id]">["params"] }) {
+  const userId = await requireUserId();
   const id = parseContactId((await params).id);
   if (id === null) notFound();
 
+  // A contact of another user is not found, the same as one that does not exist
   const [contact, notes, groups] = await Promise.all([
-    getContact(id),
-    listNotes(id),
-    listContactGroups(id),
+    getContact(userId, id),
+    listNotes(userId, id),
+    listContactGroups(userId, id),
   ]);
   if (!contact) notFound();
 

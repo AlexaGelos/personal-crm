@@ -5,6 +5,7 @@ import { GroupRow } from "@/components/group-row";
 import { Button } from "@/components/ui/button";
 import { listGroups } from "@/lib/groups";
 import { selectedGroup } from "@/lib/selected-group";
+import { requireUserId } from "@/lib/session";
 
 // The row of groups under the heading: "Все", the groups by name, "Настроить группы".
 // The links are made here, on the server; GroupRow decides how many are in sight.
@@ -16,8 +17,12 @@ export async function GroupFilter({
   searchParams: PageProps<"/">["searchParams"];
 }) {
   // searchParams first: the filter renders per request, and the build never reads the database
+  const userId = await requireUserId();
   const { q } = await searchParams;
-  const [groups, selected] = await Promise.all([listGroups(), selectedGroup(searchParams)]);
+  const [groups, selected] = await Promise.all([
+    listGroups(userId),
+    selectedGroup(userId, searchParams),
+  ]);
   const query = typeof q === "string" ? q.trim() : "";
 
   function href(groupId?: number) {

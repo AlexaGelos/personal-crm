@@ -1,9 +1,9 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import { db } from "@/db";
 import { contactGroups, groups } from "@/db/schema";
-import { addContact, addGroup, addToGroup } from "@/test/helpers";
+import { addContact, addGroup, addToGroup, addUser, TEST_USER_ID } from "@/test/helpers";
 import {
   CHARACTERS,
   GROUP_RULES as DANTE_RULES,
@@ -113,11 +113,11 @@ describe("addSeedGroups", () => {
       .sort();
 
   it("puts only its own contacts into groups and makes no empty groups", async () => {
-    const ours = await addContact("Харон", { about: "Перевозчик" });
+    const ours = await addContact(TEST_USER_ID, "Харон", { about: "Перевозчик" });
     // Same name, but the owner changed «Кто это»: not a test contact any more
-    const changed = await addContact("Минос", { about: "Мой судья" });
+    const changed = await addContact(TEST_USER_ID, "Минос", { about: "Мой судья" });
 
-    const result = await addSeedGroups(db, {
+    const result = await addSeedGroups(db, TEST_USER_ID, {
       marker: "Стражи",
       seeded: [
         { name: "Харон", about: "Перевозчик" },
@@ -133,10 +133,10 @@ describe("addSeedGroups", () => {
   });
 
   it("uses the group the owner already has under that name", async () => {
-    const charon = await addContact("Харон", { about: "Перевозчик" });
-    await addGroup("стражи");
+    const charon = await addContact(TEST_USER_ID, "Харон", { about: "Перевозчик" });
+    await addGroup(TEST_USER_ID, "стражи");
 
-    await addSeedGroups(db, {
+    await addSeedGroups(db, TEST_USER_ID, {
       marker: "Античность",
       seeded: [{ name: "Харон", about: "Перевозчик" }],
       groupsFor: () => ["Стражи", "Античность"],
@@ -147,11 +147,11 @@ describe("addSeedGroups", () => {
   });
 
   it("keeps the groups a contact is already in", async () => {
-    const charon = await addContact("Харон", { about: "Перевозчик" });
-    const own = await addGroup("Лодочники");
+    const charon = await addContact(TEST_USER_ID, "Харон", { about: "Перевозчик" });
+    const own = await addGroup(TEST_USER_ID, "Лодочники");
     await addToGroup(charon.id, own.id);
 
-    await addSeedGroups(db, {
+    await addSeedGroups(db, TEST_USER_ID, {
       marker: "Стражи",
       seeded: [{ name: "Харон", about: "Перевозчик" }],
       groupsFor: () => ["Стражи"],
@@ -161,18 +161,41 @@ describe("addSeedGroups", () => {
   });
 
   it("runs once: when the marker group is there, nothing changes", async () => {
-    const charon = await addContact("Харон", { about: "Перевозчик" });
+    const charon = await addContact(TEST_USER_ID, "Харон", { about: "Перевозчик" });
     const options = {
       marker: "Стражи",
       seeded: [{ name: "Харон", about: "Перевозчик" }],
       groupsFor: () => ["Стражи", "Ад"],
     };
-    await addSeedGroups(db, options);
+    await addSeedGroups(db, TEST_USER_ID, options);
     // The owner takes Charon out of Hell
     const [hell] = await db.select().from(groups).where(eq(groups.name, "Ад"));
     await db.delete(contactGroups).where(eq(contactGroups.groupId, hell.id));
 
-    expect(await addSeedGroups(db, options)).toBeNull();
+    expect(await addSeedGroups(db, TEST_USER_ID, options)).toBeNull();
     expect(await groupsOf(charon.id)).toEqual(["Стражи"]);
+  });
+
+  it("does not take a group of another user for its marker, and does not touch their data", async () => {
+    const other = await addUser("other@example.com");
+    const theirGroup = await addGroup(other.id, "Стражи");
+    const theirCharon = await addContact(other.id, "Харон", { about: "Перевозчик" });
+    const ourCharon = await addContact(TEST_USER_ID, "Харон", { about: "Перевозчик" });
+
+    const result = await addSeedGroups(db, TEST_USER_ID, {
+      marker: "Стражи",
+      seeded: [{ name: "Харон", about: "Перевозчик" }],
+      groupsFor: () => ["Стражи"],
+    });
+
+    // The marker of another user does not stop the run, and a second group "Стражи" is made
+    expect(result).toEqual({ groupCount: 1, linkCount: 1 });
+    expect(await groupsOf(ourCharon.id)).toEqual(["Стражи"]);
+    expect(await groupsOf(theirCharon.id)).toEqual([]);
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(contactGroups)
+      .where(eq(contactGroups.groupId, theirGroup.id));
+    expect(count).toBe(0);
   });
 });

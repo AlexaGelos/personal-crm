@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CONTACT_FORMS, pluralize } from "@/lib/format";
 import { listGroups } from "@/lib/groups";
+import { requireUserId } from "@/lib/session";
 import { parseGroupId } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -47,8 +48,9 @@ export default function GroupsPage({ searchParams }: PageProps<"/groups">) {
 
 async function GroupList({ searchParams }: { searchParams: PageProps<"/groups">["searchParams"] }) {
   // searchParams first: the list renders per request, and the build never reads the database
+  const userId = await requireUserId();
   const { edit } = await searchParams;
-  const groups = await listGroups();
+  const groups = await listGroups(userId);
   // ?edit=<id>: this group's row is a rename form instead of a name
   const editingId = parseGroupId(edit);
 

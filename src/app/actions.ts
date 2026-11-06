@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import { contacts, notes } from "@/db/schema";
+import { requireUserId } from "@/lib/session";
 import {
   createGroup as insertGroup,
   deleteGroup as removeGroup,
@@ -29,7 +30,11 @@ import {
   type UndoContactedResult,
 } from "@/lib/validation";
 
-// The contact was deleted, e.g. in another tab
+// Every action starts with requireUserId(): without a login it sends to the login page before
+// anything is read or written. Every query then carries the user, so a number of somebody
+// else's record gets the same answer as a number that does not exist
+//
+// The contact was deleted, e.g. in another tab; also the answer for a contact of another user
 const CONTACT_GONE = "Этого контакта больше нет — возможно, его удалили";
 
 function readText(formData: FormData, key: string) {
@@ -75,6 +80,7 @@ export async function createContact(
   _prevState: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  const userId = await requireUserId();
   const values = readContactFields(formData);
   const parsed = parseContactForm(values);
   if (parsed.errors) {
@@ -84,9 +90,9 @@ export async function createContact(
   const created = await db.transaction(async (tx) => {
     const [contact] = await tx
       .insert(contacts)
-      .values(parsed.contact)
+      .values({ ...parsed.contact, userId })
       .returning({ id: contacts.id });
-    await setContactGroups(tx, contact.id, {
+    await setContactGroups(tx, userId, contact.id, {
       groupIds: values.groupIds,
       newGroupNames: parsed.newGroupNames,
     });
@@ -104,6 +110,7 @@ export async function updateContact(
   _prevState: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
   const values = readContactFields(formData);
   const parsed = parseContactForm(values);
@@ -115,11 +122,11 @@ export async function updateContact(
     const [contact] = await tx
       .update(contacts)
       .set(parsed.contact)
-      .where(eq(contacts.id, id))
+      .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
       .returning({ id: contacts.id });
     if (!contact) return null;
 
-    await setContactGroups(tx, id, {
+    await setContactGroups(tx, userId, id, {
       groupIds: values.groupIds,
       newGroupNames: parsed.newGroupNames,
     });
@@ -137,12 +144,13 @@ export async function updateContact(
 }
 
 export async function deleteContact(contactId: number) {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
 
   // Notes are removed by the ON DELETE CASCADE foreign key
   const [deleted] = await db
     .delete(contacts)
-    .where(eq(contacts.id, id))
+    .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
     .returning({ name: contacts.name });
 
   revalidatePath("/");
@@ -158,6 +166,7 @@ export async function addNote(
   _prevState: NoteFormState,
   formData: FormData,
 ): Promise<NoteFormState> {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
   const body = readText(formData, "body");
   const parsed = noteSchema.safeParse(body);
@@ -165,7 +174,10 @@ export async function addNote(
     return { body, error: parsed.error.issues[0]?.message };
   }
 
-  const [contact] = await db.select({ id: contacts.id }).from(contacts).where(eq(contacts.id, id));
+  const [contact] = await db
+    .select({ id: contacts.id })
+    .from(contacts)
+    .where(and(eq(contacts.id, id), eq(contacts.userId, userId)));
   if (!contact) {
     return { body, error: CONTACT_GONE };
   }
@@ -184,13 +196,14 @@ export async function setContactFrequency(
   _prevState: FrequencyFormState,
   formData: FormData,
 ): Promise<FrequencyFormState> {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
   const frequency = frequencySchema.parse(formData.get("frequency"));
 
   const [updated] = await db
     .update(contacts)
     .set({ contactFrequency: frequency })
-    .where(eq(contacts.id, id))
+    .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
     .returning({ id: contacts.id });
 
   if (!updated) {
@@ -205,13 +218,14 @@ export async function setContactFrequency(
 // "Связались": remembers "now" as the last contact without adding a note.
 // Returns the old value, so the "Отмечено" message can undo the press
 export async function markContacted(contactId: number): Promise<MarkContactedResult> {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
 
   const mark = await db.transaction(async (tx) => {
     const [before] = await tx
       .select({ previous: contacts.lastContactedAt })
       .from(contacts)
-      .where(eq(contacts.id, id))
+      .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
       .for("update");
     if (!before) return null;
 
@@ -220,7 +234,7 @@ export async function markContacted(contactId: number): Promise<MarkContactedRes
     const [after] = await tx
       .update(contacts)
       .set({ lastContactedAt: sql`date_trunc('milliseconds', now())` })
-      .where(eq(contacts.id, id))
+      .where(and(eq(contacts.id, id), eq(contacts.userId, userId)))
       .returning({ name: contacts.name, markedAt: contacts.lastContactedAt });
 
     return {
@@ -247,6 +261,7 @@ export async function undoContacted(
   previous: string | null,
   markedAt: string,
 ): Promise<UndoContactedResult> {
+  const userId = await requireUserId();
   const id = idSchema.parse(contactId);
   const previousAt = momentSchema.nullable().parse(previous);
   const markedAtValue = momentSchema.parse(markedAt);
@@ -254,7 +269,13 @@ export async function undoContacted(
   const [restored] = await db
     .update(contacts)
     .set({ lastContactedAt: previousAt === null ? null : new Date(previousAt) })
-    .where(and(eq(contacts.id, id), eq(contacts.lastContactedAt, new Date(markedAtValue))))
+    .where(
+      and(
+        eq(contacts.id, id),
+        eq(contacts.userId, userId),
+        eq(contacts.lastContactedAt, new Date(markedAtValue)),
+      ),
+    )
     .returning({ id: contacts.id });
 
   if (!restored) {
@@ -275,13 +296,14 @@ export async function createGroup(
   _prevState: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
+  const userId = await requireUserId();
   const name = readText(formData, "name");
   const parsed = groupNameSchema.safeParse(name);
   if (!parsed.success) {
     return { name, error: parsed.error.issues[0]?.message };
   }
 
-  const result = await insertGroup(parsed.data);
+  const result = await insertGroup(userId, parsed.data);
   if ("error" in result) {
     return { name, error: result.error };
   }
@@ -295,6 +317,7 @@ export async function renameGroup(
   _prevState: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
+  const userId = await requireUserId();
   const id = idSchema.parse(groupId);
   const name = readText(formData, "name");
   const parsed = groupNameSchema.safeParse(name);
@@ -302,7 +325,7 @@ export async function renameGroup(
     return { name, error: parsed.error.issues[0]?.message };
   }
 
-  const result = await updateGroup(id, parsed.data);
+  const result = await updateGroup(userId, id, parsed.data);
   if ("error" in result) {
     return { name, error: result.error };
   }
@@ -313,9 +336,10 @@ export async function renameGroup(
 }
 
 export async function deleteGroup(groupId: number) {
+  const userId = await requireUserId();
   const id = idSchema.parse(groupId);
 
-  await removeGroup(id);
+  await removeGroup(userId, id);
 
   revalidateGroups();
   redirect("/groups");

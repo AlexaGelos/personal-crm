@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { groupNameKey, groupNameSchema, parseGroupId } from "@/lib/validation";
+import { groupNameKey, groupNameSchema, loginEmailSchema, parseGroupId } from "@/lib/validation";
 
 describe("groupNameSchema", () => {
   function firstError(name: string) {
@@ -57,5 +57,31 @@ describe("parseGroupId", () => {
     expect(parseGroupId(undefined)).toBeNull();
     expect(parseGroupId(["1", "2"])).toBeNull();
     expect(parseGroupId("99999999999")).toBeNull();
+  });
+});
+
+describe("loginEmailSchema", () => {
+  function firstError(email: string) {
+    const result = loginEmailSchema.safeParse(email);
+    return result.success ? null : result.error.issues[0].message;
+  }
+
+  it("drops the spaces at the edges and the capital letters", () => {
+    expect(loginEmailSchema.parse("  Anna@Example.COM  ")).toBe("anna@example.com");
+  });
+
+  it("refuses an address that is not one, with the same words as the form", () => {
+    for (const email of ["anna@", "anna", "@example.com", "anna example@com", "a@b@c.ru"]) {
+      expect(firstError(email), email).toBe("Проверь адрес почты");
+    }
+  });
+
+  it("refuses an empty field and a field of spaces", () => {
+    expect(firstError("")).toBe("Проверь адрес почты");
+    expect(firstError("   ")).toBe("Проверь адрес почты");
+  });
+
+  it("refuses an address that is too long", () => {
+    expect(firstError(`${"a".repeat(250)}@example.com`)).toBe("Проверь адрес почты");
   });
 });

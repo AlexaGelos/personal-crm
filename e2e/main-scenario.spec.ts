@@ -3,10 +3,13 @@
 // find it -> open the card -> write a note -> the note is saved
 import { expect, test, type Page } from "@playwright/test";
 
+import { signIn } from "./auth";
 import { addContacts, addNotes, clearDatabase, closeDatabase } from "./database";
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
   await clearDatabase();
+  // A real login before every test: the app is closed to those who are not in
+  await signIn(page);
 });
 
 test.afterAll(async () => {
@@ -107,6 +110,7 @@ test("added contact is found by name, a note written in the card is saved and se
   const otherBrowser = await browser.newContext();
   try {
     const other = await otherBrowser.newPage();
+    await signIn(other);
     await other.goto("/");
     await expect(listedNames(other)).toHaveText([
       "Вера Соседова",

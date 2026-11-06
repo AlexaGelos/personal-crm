@@ -2,11 +2,14 @@
 // and then the pencil and the bin; on a wide screen the buttons say what they do
 import { expect, test } from "@playwright/test";
 
+import { signIn } from "./auth";
 import { addGroup, clearDatabase, closeDatabase } from "./database";
 import { MANY_GROUPS } from "./groups";
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ page }) => {
   await clearDatabase();
+  // A real login before every test: the app is closed to those who are not in
+  await signIn(page);
 });
 
 test.afterAll(async () => {

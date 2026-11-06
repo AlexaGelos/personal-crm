@@ -1,6 +1,7 @@
 import { KeepInTouchBlock } from "@/components/keep-in-touch-block";
 import { listOverdueContacts } from "@/lib/data";
 import { selectedGroup } from "@/lib/selected-group";
+import { requireUserId } from "@/lib/session";
 
 // Overdue contacts the collapsed block shows
 const COLLAPSED_SIZE = 5;
@@ -13,12 +14,17 @@ export async function KeepInTouch({
 }: {
   searchParams: PageProps<"/">["searchParams"];
 }) {
+  const userId = await requireUserId();
   const { q, due, limit } = await searchParams;
   if (typeof q === "string" && q.trim()) return null;
 
-  const group = await selectedGroup(searchParams);
+  const group = await selectedGroup(userId, searchParams);
   const expanded = due === "all";
-  const overdue = await listOverdueContacts(expanded ? undefined : COLLAPSED_SIZE, group?.id);
+  const overdue = await listOverdueContacts(
+    userId,
+    expanded ? undefined : COLLAPSED_SIZE,
+    group?.id,
+  );
   const total = overdue[0]?.total ?? 0;
 
   // The block is passed on even when nobody is overdue: it may be showing "Отмечено"

@@ -1,5 +1,6 @@
 // Fills an empty database with realistic test contacts and puts them into groups: pnpm db:seed.
 // The groups are added once, also to test contacts that are already in the database
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -17,7 +18,7 @@ import {
   SURNAMES,
   type Gender,
 } from "./seed-data";
-import { addSeedGroups, chunk, createRandom } from "./seed-tools";
+import { addSeedGroups, chunk, createRandom, ensureOwner } from "./seed-tools";
 
 const CONTACT_COUNT = 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -112,7 +113,7 @@ function noteCount() {
   return randomInt(4, 6);
 }
 
-type SeedContact = typeof contacts.$inferInsert & {
+type SeedContact = Omit<typeof contacts.$inferInsert, "userId"> & {
   name: string;
   createdAt: Date;
   noteBodies: string[];
@@ -152,11 +153,11 @@ function generateContacts(now: number): SeedContact[] {
 
 type Database = ReturnType<typeof drizzle>;
 
-// Contacts go only into an empty database
-async function addContacts(db: Database, generated: SeedContact[], now: number) {
-  const existing = await db.$count(contacts);
+// Contacts go only to a user who has none
+async function addContacts(db: Database, userId: string, generated: SeedContact[], now: number) {
+  const existing = await db.$count(contacts, eq(contacts.userId, userId));
   if (existing > 0) {
-    console.log(`The database already has ${existing} contacts: no contacts were added.`);
+    console.log(`The owner already has ${existing} contacts: no contacts were added.`);
     return;
   }
 
@@ -167,6 +168,7 @@ async function addContacts(db: Database, generated: SeedContact[], now: number) 
         .insert(contacts)
         .values(
           part.map(({ name, about, howWeMet, phone, email, createdAt }) => ({
+            userId,
             name,
             about,
             howWeMet,
@@ -204,8 +206,8 @@ async function addContacts(db: Database, generated: SeedContact[], now: number) 
 // Groups go to the test contacts that are in the database, whether this run added them or an
 // earlier one did. The generator is seeded, so "generated" holds the same names and "Кто это"
 // as when the contacts were added
-async function addGroups(db: Database, generated: SeedContact[]) {
-  const result = await addSeedGroups(db, {
+async function addGroups(db: Database, userId: string, generated: SeedContact[]) {
+  const result = await addSeedGroups(db, userId, {
     marker: GROUPS_MARKER,
     seeded: generated.map((contact) => ({ name: contact.name, about: contact.about ?? null })),
     groupsFor,
@@ -224,12 +226,15 @@ async function main() {
   const db = drizzle(sql);
 
   try {
+    // First of all: without OWNER_EMAIL the script stops before it adds anything
+    const userId = await ensureOwner(db);
+
     // Generated first and only once: the random numbers must come in the same order as always
     const now = Date.now();
     const generated = generateContacts(now);
 
-    await addContacts(db, generated, now);
-    await addGroups(db, generated);
+    await addContacts(db, userId, generated, now);
+    await addGroups(db, userId, generated);
   } finally {
     await sql.end();
   }
