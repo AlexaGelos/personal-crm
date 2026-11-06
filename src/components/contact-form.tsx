@@ -44,6 +44,18 @@ function ContactFormFields({
   const values = state.values ?? defaults;
   const errors = state.errors ?? {};
 
+  // The group picker keeps its own state, which the reset above cannot restore: it is rebuilt from
+  // the values on every answer of the server. It is also rebuilt when the groups in `defaults`
+  // change: the form is remounted when its page is hidden, with the groups from before the save,
+  // and the saved ones arrive with the next visit
+  const [seenState, setSeenState] = useState(state);
+  const [answerCount, setAnswerCount] = useState(0);
+  if (seenState !== state) {
+    setSeenState(state);
+    setAnswerCount((count) => count + 1);
+  }
+  const pickerKey = `${answerCount}:${values.groupIds.join(",")}:${JSON.stringify(values.newGroupNames)}`;
+
   return (
     <form action={formAction} className="flex flex-col gap-5" noValidate>
       {state.message && (
@@ -96,6 +108,7 @@ function ContactFormFields({
       </div>
 
       <GroupPicker
+        key={pickerKey}
         groups={groups}
         initialIds={values.groupIds}
         initialNewNames={values.newGroupNames}
