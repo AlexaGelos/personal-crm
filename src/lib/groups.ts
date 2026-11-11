@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db";
+import { DatabaseQueryError } from "@/db/redact-errors";
 import { contactGroups, contacts, groups } from "@/db/schema";
 import { groupNameKey } from "@/lib/validation";
 
@@ -49,15 +50,10 @@ export async function createGroup(userId: string, name: string): Promise<GroupRe
 // The group was deleted, e.g. in another tab
 export const GROUP_GONE = "Этой группы больше нет — возможно, её удалили";
 
-// Postgres error code of a broken unique index. Drizzle keeps the original error in "cause"
+// Postgres error code of a broken unique index. A failed query arrives as DatabaseQueryError
+// (src/db/redact-errors.ts), which keeps the code but not the values of the query
 function isUniqueViolation(error: unknown) {
-  const original = error instanceof Error && error.cause ? error.cause : error;
-  return (
-    typeof original === "object" &&
-    original !== null &&
-    "code" in original &&
-    original.code === "23505"
-  );
+  return error instanceof DatabaseQueryError && error.code === "23505";
 }
 
 // Changing only the case or "ё" / "е" is fine: the index compares the row with the new value of itself

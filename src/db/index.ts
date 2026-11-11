@@ -4,7 +4,11 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { databaseConfig } from "./config";
+import { hideQueryValues } from "./redact-errors";
 import * as schema from "./schema";
+
+// A failed query must not put the values of the query into the log
+hideQueryValues();
 
 function connect() {
   return drizzle(postgres({ ...databaseConfig(), max: 10 }), { schema });
