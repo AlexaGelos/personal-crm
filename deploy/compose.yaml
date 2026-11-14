@@ -1,7 +1,9 @@
-# Production on the server: docker compose project "prod", run by deploy.sh.
-# Secrets come from .env next to this file (mode 600); the app version comes from
-# APP_IMAGE, which deploy.sh sets for every run.
-name: prod
+# The prod and the staging on the server: the same file, docker compose projects "prod" and
+# "staging" (-p), run by deploy.sh. Each project has its own containers, its own database volume
+# and its own env file next to this file (mode 600): .env for the prod, .env.staging for the
+# staging. The app version comes from APP_IMAGE, and the rest of what differs between the
+# environments (APP_PORT, APP_URL, APP_MEM_LIMIT, DB_MEM_LIMIT) from lib.sh: deploy.sh sets
+# them for every run.
 
 x-logging: &logging
   driver: json-file
@@ -20,8 +22,9 @@ x-app-environment: &app-environment
   POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
   POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
-  # The address the app is opened on: links in the emails lead there
-  BETTER_AUTH_URL: https://app.crmgelos.ru
+  # The address the app is opened on: links in the emails lead there, so a login asked for on
+  # the staging gets a link to the staging
+  BETTER_AUTH_URL: ${APP_URL:?run deploy.sh, it sets APP_URL}
   # Signs the login cookie. Generated once on the server: openssl rand -base64 32
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET in .env (openssl rand -base64 32)}
   # Resend: the login is always "resend", the password is the API key. If the server does not let
@@ -41,6 +44,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    mem_limit: ${DB_MEM_LIMIT:?run deploy.sh, it sets DB_MEM_LIMIT}
     # No published port: only the containers of this project reach the database
     volumes:
       # Since postgres 18 the volume is mounted at /var/lib/postgresql, not .../data
@@ -65,6 +69,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    mem_limit: ${APP_MEM_LIMIT:?run deploy.sh, it sets APP_MEM_LIMIT}
     profiles: [tools]
     logging: *logging
 
@@ -72,9 +77,10 @@ services:
     image: ${APP_IMAGE:?run deploy.sh, it sets APP_IMAGE}
     restart: unless-stopped
     environment: *app-environment
+    mem_limit: ${APP_MEM_LIMIT:?run deploy.sh, it sets APP_MEM_LIMIT}
     ports:
-      # Localhost only: nginx proxies app.crmgelos.ru here
-      - "127.0.0.1:3000:3000"
+      # Localhost only: nginx proxies the domain of the environment here
+      - "127.0.0.1:${APP_PORT:?run deploy.sh, it sets APP_PORT}:3000"
     depends_on:
       db:
         condition: service_healthy

@@ -13,6 +13,8 @@ set -euo pipefail
 SCRIPT=$(readlink -f "$0")
 cd "$(dirname "$SCRIPT")"
 source ./lib.sh
+# The staging has no backups and no restore: its database is made again by refresh-staging-db.sh
+use_environment prod
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <backup file>" >&2

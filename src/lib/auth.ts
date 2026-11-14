@@ -37,6 +37,10 @@ function createAuth() {
     // The address the app is opened on: the links in the emails lead there, and the cookie
     // is Secure when it starts with https
     baseURL,
+    // The login cookie belongs to the host of baseURL only (app.crmgelos.ru or test-app.crmgelos.ru):
+    // no Domain attribute, so the prod and the staging never see each other's cookie. This is the
+    // library default, written out so that nobody turns on a cookie for the shared domain
+    advanced: { crossSubDomainCookies: { enabled: false } },
     // Tables are plural (users, sessions...) like the rest of the schema
     database: drizzleAdapter(db, { provider: "pg", schema, usePlural: true }),
     session: {
