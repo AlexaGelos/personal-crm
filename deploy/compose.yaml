@@ -5,11 +5,14 @@
 # environments (APP_PORT, APP_URL, APP_MEM_LIMIT, DB_MEM_LIMIT) from lib.sh: deploy.sh sets
 # them for every run.
 
+# Container logs go to the journal of the server (journald): they outlive the container, so they
+# survive a deploy and a rollback, and the system itself limits the journal size and removes the
+# oldest lines. The tag is the container name (prod-app-1), so the lines are found by it:
+# the new container after a deploy has the same name. Read: journalctl CONTAINER_NAME=prod-app-1
 x-logging: &logging
-  driver: json-file
+  driver: journald
   options:
-    max-size: 10m
-    max-file: "3"
+    tag: "{{.Name}}"
 
 # TZ: pages show dates and times in this zone, the same as on the owner's computer.
 # Login and email: what is not a secret is written here in the file, as TZ is; the secrets come
