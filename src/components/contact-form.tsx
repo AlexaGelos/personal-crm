@@ -2,12 +2,14 @@
 
 import { useActionState, useId, useLayoutEffect, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 
 import { GroupPicker, type GroupOption } from "@/components/group-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { birthMonthNames } from "@/lib/format";
 import {
   emptyContactFields,
   type ContactFields,
@@ -107,6 +109,13 @@ function ContactFormFields({
         />
       </div>
 
+      <BirthDateField
+        day={values.birthDay}
+        month={values.birthMonth}
+        year={values.birthYear}
+        error={errors.birthDate?.[0]}
+      />
+
       <GroupPicker
         key={pickerKey}
         groups={groups}
@@ -125,6 +134,96 @@ function ContactFormFields({
         </Button>
       </div>
     </form>
+  );
+}
+
+// Day, month and year under one label. The month is a plain <select>: it works well on phones
+// and needs no library. An error is for the whole date, so it stands under all three parts
+function BirthDateField({
+  day,
+  month,
+  year,
+  error,
+}: {
+  day: string;
+  month: string;
+  year: string;
+  error?: string;
+}) {
+  const id = useId();
+  const labelId = `${id}-label`;
+  const hintId = `${id}-hint`;
+  const errorId = `${id}-error`;
+  const shared = {
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? `${hintId} ${errorId}` : hintId,
+  };
+
+  return (
+    <div role="group" aria-labelledby={labelId} className="flex flex-col gap-2.5">
+      <span
+        id={labelId}
+        className="flex items-center gap-2 text-xs leading-none font-medium tracking-[0.18em] text-label uppercase select-none"
+      >
+        Дата рождения
+      </span>
+      {/* Three parts in one row, also on a phone: the day and the year are narrow, the month takes the rest */}
+      <div className="grid grid-cols-[3.75rem_minmax(0,1fr)_4.75rem] gap-2">
+        <Input
+          name="birthDay"
+          aria-label="День"
+          placeholder="День"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={2}
+          className="px-3"
+          defaultValue={day}
+          {...shared}
+        />
+        <div className="relative">
+          {/* The key: React applies defaultValue of a <select> only once, but after a failed save
+              the form is reset and the typed month has to come back */}
+          <select
+            key={month}
+            name="birthMonth"
+            aria-label="Месяц"
+            defaultValue={month}
+            {...shared}
+            className="h-12 w-full min-w-0 appearance-none rounded-field border border-input bg-field py-1 pr-8 pl-3 text-base transition-[color,border-color,box-shadow] duration-400 outline-none focus-visible:border-glow-line focus-visible:shadow-glow-field aria-invalid:border-destructive-line aria-invalid:shadow-invalid md:text-[0.9375rem]"
+          >
+            <option value="">Месяц</option>
+            {birthMonthNames.map((name, index) => (
+              <option key={name} value={index + 1}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-subtle-foreground"
+          />
+        </div>
+        <Input
+          name="birthYear"
+          aria-label="Год"
+          placeholder="Год"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={4}
+          className="px-3"
+          defaultValue={year}
+          {...shared}
+        />
+      </div>
+      <p id={hintId} className="text-[0.8125rem] text-subtle-foreground">
+        Год можно не указывать
+      </p>
+      {error && (
+        <p id={errorId} className="text-[0.8125rem] text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

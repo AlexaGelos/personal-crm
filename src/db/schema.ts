@@ -1,11 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgEnum,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -115,8 +117,33 @@ export const contacts = pgTable(
     contactFrequency: contactFrequency("contact_frequency"),
     // Last press of "Связались"; NULL - never pressed
     lastContactedAt: timestamp("last_contacted_at", { withTimezone: true }),
+    // Birth date in three parts: the year is optional, a person may be known for years without it.
+    // All NULL - the date is not set; day and month are set together, the year only with them
+    birthDay: smallint("birth_day"),
+    birthMonth: smallint("birth_month"),
+    birthYear: smallint("birth_year"),
   },
-  (table) => [index("contacts_user_id_idx").on(table.userId)],
+  (table) => [
+    index("contacts_user_id_idx").on(table.userId),
+    // The same rules as birthDateSchema in src/lib/validation.ts: a request that goes around the
+    // app cannot write an impossible date. A NULL passes a range check, so the pair check comes
+    // first. Whether February 29 exists in the given year is left to the app: the database only
+    // knows that February may have 29 days
+    check(
+      "contacts_birth_date_pair",
+      sql`(${table.birthDay} is null) = (${table.birthMonth} is null)`,
+    ),
+    check(
+      "contacts_birth_year_needs_date",
+      sql`${table.birthYear} is null or ${table.birthDay} is not null`,
+    ),
+    check("contacts_birth_month_range", sql`${table.birthMonth} between 1 and 12`),
+    check(
+      "contacts_birth_day_range",
+      sql`${table.birthDay} between 1 and case ${table.birthMonth} when 2 then 29 when 4 then 30 when 6 then 30 when 9 then 30 when 11 then 30 else 31 end`,
+    ),
+    check("contacts_birth_year_range", sql`${table.birthYear} between 1900 and 2200`),
+  ],
 );
 
 // Notes belong to the owner of the contact: no column of their own

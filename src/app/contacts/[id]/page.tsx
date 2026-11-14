@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContact, listNotes } from "@/lib/data";
 import { listContactGroups } from "@/lib/groups";
-import { formatDate, formatDateTime, formatDay, formatOverdue, pluralize } from "@/lib/format";
+import {
+  formatBirthDate,
+  formatDate,
+  formatDateTime,
+  formatDay,
+  formatOverdue,
+  pluralize,
+} from "@/lib/format";
 import { requireUserId } from "@/lib/session";
 import { parseContactId } from "@/lib/validation";
 
@@ -102,6 +109,11 @@ async function ContactDetails({ params }: { params: PageProps<"/contacts/[id]">[
                   {contact.email}
                 </a>
               )}
+            </Detail>
+            <Detail label="День рождения">
+              {contact.birthDay !== null &&
+                contact.birthMonth !== null &&
+                formatBirthDate(contact.birthDay, contact.birthMonth, contact.birthYear)}
             </Detail>
             <Detail label="Группы">
               {groups.length > 0 && (

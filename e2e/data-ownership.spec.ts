@@ -2,6 +2,7 @@
 // browsers. Each sees and changes only their own contacts, groups and notes
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
+import { addDays, today } from "@/test/days";
 import { signIn } from "./auth";
 import {
   addContact,
@@ -247,4 +248,43 @@ test("the owner, who has the data from before the login, logs in and sees all of
   await expect(page.getByText("Обсудили отпуск")).toBeVisible();
   await expect(page.getByText("Позвонила сама")).toBeVisible();
   expect(await usersWithEmail(A)).toHaveLength(1);
+});
+
+// A birthday `days` days from today
+function bornIn(days: number) {
+  const [, month, day] = addDays(today(), days).split("-").map(Number);
+  return { birthDay: day, birthMonth: month };
+}
+
+test("«Скоро день рождения» shows only your own: the birthday of A is not in the block of B", async ({
+  browser,
+}) => {
+  const a = await addUser(A);
+  const b = await addUser(B);
+  await addContact("Анна Закрытая", { userId: a.id, ...bornIn(1) });
+  // B has a birthday of their own, so that the block is there to be checked
+  await addContact("Борис Свой", { userId: b.id, ...bornIn(2) });
+
+  const page = await personIn(browser, B);
+
+  const block = page.getByRole("region", { name: "Скоро день рождения" });
+  await expect(block.getByRole("listitem").getByRole("link")).toHaveText(["Борис Свой"]);
+  await expect(page.getByText("Анна Закрытая")).toBeHidden();
+  // The group of A does not let the birthdays of A through either
+  const tennis = await addGroup("Теннис", a.id);
+  await page.goto(`/?group=${tennis.id}`);
+  await expect(page.getByText("Анна Закрытая")).toBeHidden();
+});
+
+test("a person without contacts sees no «Скоро день рождения», though A has a birthday tomorrow", async ({
+  browser,
+}) => {
+  const a = await addUser(A);
+  await addContact("Анна Закрытая", { userId: a.id, ...bornIn(1) });
+
+  const page = await personIn(browser, B);
+
+  await expect(page.getByText("Пока нет ни одного контакта")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Скоро день рождения" })).toBeHidden();
+  await expect(page.getByText("Анна Закрытая")).toBeHidden();
 });

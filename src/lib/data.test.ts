@@ -6,6 +6,7 @@ import {
   listContacts,
   listNotes,
   listOverdueContacts,
+  listUpcomingBirthdays,
 } from "@/lib/data";
 import { addDays, addMonths, onDay, today } from "@/test/days";
 import { addContact, addGroup, addNote, addToGroup, addUser, TEST_USER_ID } from "@/test/helpers";
@@ -463,5 +464,208 @@ describe("data of another user", () => {
 
     expect(await listNotes(b, anna.id)).toEqual([]);
     expect(await listNotes(a, anna.id)).toHaveLength(1);
+  });
+});
+
+// "Now" is given to the function, so the calendar days of the scenarios do not depend on the day
+// the tests run. The zone is Moscow (vitest.config.mts), as everywhere in the tests
+describe("listUpcomingBirthdays", () => {
+  const at = (day: string, time = "12:00:00") => new Date(`${day}T${time}+03:00`);
+
+  function addBorn(name: string, day: number, month: number, year: number | null = null) {
+    return addContact(TEST_USER_ID, name, { birthDay: day, birthMonth: month, birthYear: year });
+  }
+
+  async function namesAndDays(now: Date, groupId?: number) {
+    const rows = await listUpcomingBirthdays(TEST_USER_ID, groupId, now);
+    return rows.map((row) => [row.name, row.daysUntil]);
+  }
+
+  it("takes today and the 7 days after it, not yesterday and not the 8th day", async () => {
+    await addBorn("Вчера", 13, 11);
+    await addBorn("Сегодня", 14, 11);
+    await addBorn("Через неделю", 21, 11);
+    await addBorn("Через восемь", 22, 11);
+
+    expect(await namesAndDays(at("2026-11-14"))).toEqual([
+      ["Сегодня", 0],
+      ["Через неделю", 7],
+    ]);
+  });
+
+  it("goes over the end of the year", async () => {
+    await addBorn("Под Новый год", 31, 12);
+    await addBorn("Третье января", 3, 1);
+    await addBorn("Пятое января", 5, 1);
+    await addBorn("Шестое января", 6, 1);
+
+    expect(await namesAndDays(at("2026-12-29"))).toEqual([
+      ["Под Новый год", 2],
+      ["Третье января", 5],
+      ["Пятое января", 7],
+    ]);
+  });
+
+  it("puts February 29 on February 28 in a year without it", async () => {
+    await addBorn("Високосный", 29, 2, 2000);
+
+    expect(await namesAndDays(at("2027-02-25"))).toEqual([["Високосный", 3]]);
+    // The day after it has passed the next one is in 2028
+    expect(await namesAndDays(at("2027-03-01"))).toEqual([]);
+  });
+
+  it("keeps February 29 on February 29 in a leap year", async () => {
+    await addBorn("Високосный", 29, 2);
+
+    expect(await namesAndDays(at("2028-02-25"))).toEqual([["Високосный", 4]]);
+    // February 28 is not the birthday yet
+    expect(await namesAndDays(at("2028-02-28"))).toEqual([["Високосный", 1]]);
+  });
+
+  it("does not take a birthday that has just passed: the next one is in a year", async () => {
+    await addBorn("Позавчера", 12, 11);
+
+    expect(await namesAndDays(at("2026-11-14"))).toEqual([]);
+  });
+
+  it("counts today in the zone of the app, not in UTC", async () => {
+    await addBorn("Четырнадцатое", 14, 11);
+    await addBorn("Пятнадцатое", 15, 11);
+
+    // 23:30 on November 14 in UTC is 02:30 on November 15 in Moscow
+    expect(await namesAndDays(new Date("2026-11-14T23:30:00Z"))).toEqual([["Пятнадцатое", 0]]);
+    // 20:30 UTC is 23:30 in Moscow: still the 14th
+    expect(await namesAndDays(new Date("2026-11-14T20:30:00Z"))).toEqual([
+      ["Четырнадцатое", 0],
+      ["Пятнадцатое", 1],
+    ]);
+  });
+
+  it("puts the nearest birthday first, then the name, then the id", async () => {
+    await addBorn("Вера", 20, 11);
+    await addBorn("Борис", 15, 11);
+    await addBorn("Анна", 17, 11);
+    await addBorn("Вера", 16, 11);
+    await addBorn("Аркадий", 16, 11);
+    await addBorn("Вера", 16, 11);
+
+    const rows = await listUpcomingBirthdays(TEST_USER_ID, undefined, at("2026-11-14"));
+
+    expect(rows.map((row) => [row.name, row.daysUntil])).toEqual([
+      ["Борис", 1],
+      ["Аркадий", 2],
+      ["Вера", 2],
+      ["Вера", 2],
+      ["Анна", 3],
+      ["Вера", 6],
+    ]);
+    // The two Veras of one day: the earlier added goes first
+    const sameDay = rows.filter((row) => row.name === "Вера" && row.daysUntil === 2);
+    expect(sameDay[0].id).toBeLessThan(sameDay[1].id);
+  });
+
+  it("gives the age the person turns, and none when the year is not known", async () => {
+    await addBorn("Борис", 18, 11, 1990);
+    await addBorn("Вера", 18, 11);
+    await addBorn("Високосный", 29, 2, 2000);
+
+    const rows = await listUpcomingBirthdays(TEST_USER_ID, undefined, at("2026-11-14"));
+
+    expect(rows.map((row) => [row.name, row.age])).toEqual([
+      ["Борис", 36],
+      ["Вера", null],
+    ]);
+    // Born on February 29, 2000: turns 27 on February 28, 2027
+    const [leap] = await listUpcomingBirthdays(TEST_USER_ID, undefined, at("2027-02-25"));
+    expect(leap).toMatchObject({ name: "Високосный", age: 27 });
+  });
+
+  it("gives the age of next year when the birthday is over the end of the year", async () => {
+    await addBorn("Борис", 3, 1, 1990);
+
+    const [row] = await listUpcomingBirthdays(TEST_USER_ID, undefined, at("2026-12-29"));
+
+    expect(row.age).toBe(37);
+  });
+
+  it("gives what the block shows: name, who it is, the date", async () => {
+    await addContact(TEST_USER_ID, "Борис", {
+      about: "школьный друг",
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    const [row] = await listUpcomingBirthdays(TEST_USER_ID, undefined, at("2026-11-14"));
+
+    expect(row).toMatchObject({
+      name: "Борис",
+      about: "школьный друг",
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+      daysUntil: 4,
+      age: 36,
+    });
+  });
+
+  it("leaves out the contacts without a birth date", async () => {
+    await addContact(TEST_USER_ID, "Без даты");
+    await addBorn("Борис", 15, 11);
+
+    expect(await namesAndDays(at("2026-11-14"))).toEqual([["Борис", 1]]);
+  });
+
+  it("takes only the contacts of the selected group", async () => {
+    const tennis = await addGroup(TEST_USER_ID, "Теннис");
+    const family = await addGroup(TEST_USER_ID, "Семья");
+    const boris = await addBorn("Борис", 15, 11);
+    const vera = await addBorn("Вера", 16, 11);
+    await addToGroup(boris.id, tennis.id);
+    await addToGroup(vera.id, family.id);
+
+    expect(await namesAndDays(at("2026-11-14"), tennis.id)).toEqual([["Борис", 1]]);
+    expect(await namesAndDays(at("2026-11-14"))).toEqual([
+      ["Борис", 1],
+      ["Вера", 2],
+    ]);
+  });
+
+  it("is empty when nobody in the group has a birthday soon", async () => {
+    const tennis = await addGroup(TEST_USER_ID, "Теннис");
+    await addBorn("Вера", 16, 11);
+    const boris = await addBorn("Борис", 1, 6);
+    await addToGroup(boris.id, tennis.id);
+
+    expect(await namesAndDays(at("2026-11-14"), tennis.id)).toEqual([]);
+  });
+
+  it("takes the real today when no moment is given", async () => {
+    const dayOf = (days: number) => addDays(today(), days).split("-").map(Number);
+    const [year, month, day] = dayOf(0);
+    await addBorn("Сегодня", day, month, year - 30);
+    await addBorn("Через неделю", dayOf(7)[2], dayOf(7)[1]);
+    await addBorn("Через восемь", dayOf(8)[2], dayOf(8)[1]);
+
+    const rows = await listUpcomingBirthdays(TEST_USER_ID);
+
+    expect(rows.map((row) => [row.name, row.daysUntil])).toEqual([
+      ["Сегодня", 0],
+      ["Через неделю", 7],
+    ]);
+    expect(rows[0].age).toBe(30);
+  });
+
+  it("leaves the contact of another user out", async () => {
+    const a = await addUser("a@example.com");
+    const b = await addUser("b@example.com");
+    const anna = await addContact(a.id, "Анна", { birthDay: 15, birthMonth: 11 });
+    const tennis = await addGroup(a.id, "Теннис");
+    await addToGroup(anna.id, tennis.id);
+
+    expect(await listUpcomingBirthdays(b.id, undefined, at("2026-11-14"))).toEqual([]);
+    // The number of a group of another user matches nothing either
+    expect(await listUpcomingBirthdays(b.id, tennis.id, at("2026-11-14"))).toEqual([]);
+    expect(await listUpcomingBirthdays(a.id, undefined, at("2026-11-14"))).toHaveLength(1);
   });
 });

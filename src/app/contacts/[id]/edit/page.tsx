@@ -60,6 +60,9 @@ async function EditContact({ params }: { params: PageProps<"/contacts/[id]/edit"
               howWeMet: contact.howWeMet ?? "",
               phone: contact.phone ?? "",
               email: contact.email ?? "",
+              birthDay: contact.birthDay?.toString() ?? "",
+              birthMonth: contact.birthMonth?.toString() ?? "",
+              birthYear: contact.birthYear?.toString() ?? "",
               groupIds: contactGroups.map((group) => group.id),
               newGroupNames: [],
             }}

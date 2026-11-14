@@ -9,6 +9,7 @@ import { KeepInTouch } from "@/components/keep-in-touch";
 import { RunningDemon } from "@/components/running-demon";
 import { SearchBox, SearchBoxFallback } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
+import { UpcomingBirthdays } from "@/components/upcoming-birthdays";
 
 export default function HomePage({ searchParams }: PageProps<"/">) {
   return (
@@ -40,6 +41,11 @@ export default function HomePage({ searchParams }: PageProps<"/">) {
       {/* No placeholder: most of the time there is no block, a placeholder would only flicker */}
       <Suspense fallback={null}>
         <KeepInTouch searchParams={searchParams} />
+      </Suspense>
+
+      {/* Under "Пора связаться", over the search; no placeholder for the same reason */}
+      <Suspense fallback={null}>
+        <UpcomingBirthdays searchParams={searchParams} />
       </Suspense>
 
       <Suspense fallback={<SearchBoxFallback />}>

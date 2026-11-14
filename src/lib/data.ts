@@ -10,6 +10,7 @@ import {
   gt,
   ilike,
   isNotNull,
+  lte,
   or,
   sql,
   type SQL,
@@ -191,6 +192,64 @@ export async function listOverdueContacts(userId: string, limit?: number, groupI
     .orderBy(desc(due.overdueDays), asc(due.name), asc(due.id));
 
   return limit === undefined ? query : query.limit(limit);
+}
+
+// A birthday today and in the 7 days after it: the window is 8 days, counting today
+const BIRTHDAY_WINDOW_DAYS = 7;
+
+// The day of the birthday in the given year. February 29 in a year without it is February 28:
+// the day is cut to the length of the month
+function birthdayIn(year: SQL) {
+  const firstOfMonth = sql`make_date(${year}, ${contacts.birthMonth}::int, 1)`;
+  const lastDay = sql`extract(day from ${firstOfMonth} + interval '1 month' - interval '1 day')::int`;
+  return sql`(${firstOfMonth} + (least(${contacts.birthDay}::int, ${lastDay}) - 1))`;
+}
+
+// Contacts whose birthday is today or in the next 7 days, the nearest first. Counted by the
+// database, like the due dates: "today" is the day in the zone the dates are shown in, so the
+// birthdays match the note dates. Without a group - all of the user's contacts, with a group -
+// only its contacts. `now` is for the tests; the app never passes it.
+// daysUntil: 0 is today. age: how old the person turns, NULL when the year of birth is not known
+export async function listUpcomingBirthdays(
+  userId: string,
+  groupId?: number,
+  now: Date = new Date(),
+) {
+  const today = sql`(${now.toISOString()}::timestamptz at time zone ${appTimeZone()})::date`;
+  const thisYear = sql`extract(year from ${today})::int`;
+
+  // The birthday of this year, or of the next one when it has already passed
+  const nextBirthday = sql`(case when ${birthdayIn(thisYear)} >= ${today} then ${birthdayIn(thisYear)} else ${birthdayIn(sql`${thisYear} + 1`)} end)`;
+  const age = sql<
+    number | null
+  >`case when ${contacts.birthYear} is null then null else extract(year from ${nextBirthday})::int - ${contacts.birthYear} end`;
+
+  const upcoming = db
+    .select({
+      id: contacts.id,
+      name: contacts.name,
+      about: contacts.about,
+      birthDay: contacts.birthDay,
+      birthMonth: contacts.birthMonth,
+      birthYear: contacts.birthYear,
+      daysUntil: sql<number>`${nextBirthday} - ${today}`.as("days_until"),
+      age: age.as("age"),
+    })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.userId, userId),
+        isNotNull(contacts.birthDay),
+        groupCondition(userId, groupId),
+      ),
+    )
+    .as("upcoming");
+
+  return db
+    .select()
+    .from(upcoming)
+    .where(lte(upcoming.daysUntil, BIRTHDAY_WINDOW_DAYS))
+    .orderBy(asc(upcoming.daysUntil), asc(upcoming.name), asc(upcoming.id));
 }
 
 // The notes belong to the owner of the contact: of a foreign contact there are none to give

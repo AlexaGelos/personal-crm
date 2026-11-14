@@ -15,6 +15,7 @@ import {
   setContactGroups,
 } from "@/lib/groups";
 import {
+  birthDateSchema,
   contactSchema,
   frequencySchema,
   groupNameSchema,
@@ -49,6 +50,9 @@ function readContactFields(formData: FormData): ContactFormValues {
     howWeMet: readText(formData, "howWeMet"),
     phone: readText(formData, "phone"),
     email: readText(formData, "email"),
+    birthDay: readText(formData, "birthDay"),
+    birthMonth: readText(formData, "birthMonth"),
+    birthYear: readText(formData, "birthYear"),
     // Checked groups, then the names typed into "Новая группа"
     groupIds: formData.getAll("groupId").flatMap((value) => {
       const parsed = idSchema.safeParse(typeof value === "string" ? Number(value) : NaN);
@@ -60,17 +64,28 @@ function readContactFields(formData: FormData): ContactFormValues {
   };
 }
 
-// The contact fields and the typed group names, checked together: the form shows all errors at once
+// The contact fields, the birth date and the typed group names, checked together: the form shows
+// all errors at once. An empty date is stored as three NULLs, a date without a year - as two
 function parseContactForm(values: ContactFormValues) {
   const contact = contactSchema.safeParse(values);
+  const birthDate = birthDateSchema.safeParse(values);
   const newGroupNames = z.array(groupNameSchema).safeParse(values.newGroupNames);
-  if (contact.success && newGroupNames.success) {
-    return { contact: contact.data, newGroupNames: newGroupNames.data };
+  if (contact.success && birthDate.success && newGroupNames.success) {
+    return {
+      contact: {
+        ...contact.data,
+        birthDay: birthDate.data?.day ?? null,
+        birthMonth: birthDate.data?.month ?? null,
+        birthYear: birthDate.data?.year ?? null,
+      },
+      newGroupNames: newGroupNames.data,
+    };
   }
 
   return {
     errors: {
       ...(contact.success ? {} : z.flattenError(contact.error).fieldErrors),
+      ...(birthDate.success ? {} : { birthDate: [birthDate.error.issues[0].message] }),
       ...(newGroupNames.success ? {} : { newGroupNames: [newGroupNames.error.issues[0].message] }),
     },
   };
