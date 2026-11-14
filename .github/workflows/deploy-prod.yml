@@ -1,0 +1,184 @@
+# Deploy to the prod. Starts only by hand (Actions -> Deploy prod -> Run workflow), never after a merge.
+# Which version goes to the prod:
+#   - "rollback" ticked: the version that ran on the prod before the current one. The server knows
+#     it (deploy/previous-version.sh). The SHA field is ignored, the staging is not asked
+#   - the SHA field is empty: the last version that was deployed to the staging successfully
+#   - the SHA field is filled: that version, but only if it was deployed to the staging
+#     successfully (the history of the "staging" environment in GitHub, see deploy-staging.yml)
+# Everything that happens on the server is in deploy/deploy.sh. After a successful deploy the old
+# images in GHCR are removed (the last 10 builds stay)
+name: Deploy prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA (40 characters). Empty - the last version that went green on the staging
+        type: string
+        required: false
+        default: ""
+      rollback:
+        description: Roll back to the version before the current one (the SHA field is ignored)
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy to prod
+    # The scripts that are copied to the server come from the branch the workflow runs on
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: prod
+      url: https://app.crmgelos.ru
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The server pulls the image with this job's short-lived token
+      packages: read
+      # The history of the staging deploys
+      deployments: read
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
+    env:
+      TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+      DEPLOY_DIR: /srv/personal-crm
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: deploy
+
+      - name: Set up SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      # rsync writes every file under a temporary name and renames it: a deploy of the staging
+      # that is running right now keeps reading the old deploy.sh, not a half-written one
+      - name: Copy deploy scripts to the server
+        run: rsync -rt deploy/ "$TARGET:$DEPLOY_DIR/"
+
+      - name: Choose the version
+        id: version
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+          ROLLBACK: ${{ inputs.rollback }}
+        run: |
+          set -euo pipefail
+
+          if [[ $ROLLBACK == true ]]; then
+            how="rollback to the version before the current one"
+            sha=$(ssh "$TARGET" bash "$DEPLOY_DIR/previous-version.sh")
+            if [[ ! $sha =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::The server did not name a version to roll back to"
+              exit 1
+            fi
+          else
+            want=${INPUT_SHA//[[:space:]]/}
+            if [[ -n $want && ! $want =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::The SHA must be the full 40 characters (lowercase letters and digits), or empty"
+              exit 1
+            fi
+            if [[ -n $want ]]; then
+              how="SHA given by hand, it was deployed to the staging successfully"
+            else
+              how="the last version that was deployed to the staging successfully"
+            fi
+
+            # Newest first. A deployment counts as green if any of its statuses is "success":
+            # when a newer version arrives, GitHub marks the older deployments "inactive"
+            deployments=$(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=staging&per_page=100" \
+              --jq '.[] | "\(.id) \(.sha)"')
+            sha=''
+            while read -r id deployed_sha; do
+              [[ -z $want || $deployed_sha == "$want" ]] || continue
+              greens=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=100" \
+                --jq '[.[] | select(.state == "success")] | length')
+              if (( greens > 0 )); then
+                sha=$deployed_sha
+                break
+              fi
+            done <<<"$deployments"
+
+            if [[ -z $sha ]]; then
+              if [[ -n $want ]]; then
+                echo "::error::$want has no successful deploy to the staging among the last 100 deploys. Deploy it to the staging first, or leave the SHA field empty"
+              else
+                echo "::error::There is no successful deploy to the staging yet"
+              fi
+              exit 1
+            fi
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Deploy prod"
+            echo
+            echo "Version: [\`$sha\`]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$sha)"
+            echo
+            echo "Chosen as: $how"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Deploying $sha to the prod ($how)"
+
+      - name: Run deploy/deploy.sh on the server
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: echo "$GITHUB_ACTOR $REGISTRY_TOKEN" | ssh "$TARGET" bash "$DEPLOY_DIR/deploy.sh" prod "$SHA"
+
+      - name: Result in the summary
+        if: success()
+        env:
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          {
+            echo
+            echo "Done: \`$SHA\` is live on the prod."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup-registry:
+    name: Clean up old images in GHCR
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEPLOYED_SHA: ${{ needs.deploy.outputs.sha }}
+      BUILDS_TO_KEEP: 10
+    steps:
+      # Keeps the 10 newest tagged builds (the tag is the commit SHA) and the version that was
+      # just deployed. The untagged versions are not touched: they may belong to a tagged image
+      - name: Remove the older builds
+        run: |
+          set -euo pipefail
+          package=${GITHUB_REPOSITORY#*/}
+          api="/users/$GITHUB_REPOSITORY_OWNER/packages/container/$package/versions"
+
+          versions=$(gh api --paginate "$api?per_page=100" \
+            --jq '.[] | select(.metadata.container.tags | length > 0) | "\(.created_at) \(.id) \(.metadata.container.tags | join(","))"')
+
+          old=$(sort -r <<<"$versions" | tail -n +"$((BUILDS_TO_KEEP + 1))")
+          if [[ -z $old ]]; then
+            echo "Nothing to remove: $(grep -c . <<<"$versions") builds in GHCR, up to $BUILDS_TO_KEEP are kept"
+            exit 0
+          fi
+
+          while read -r created id tags; do
+            if [[ ",$tags," == *",$DEPLOYED_SHA,"* ]]; then
+              echo "Keeping $tags (built $created): it was just deployed"
+              continue
+            fi
+            echo "Removing $tags (built $created)"
+            gh api -X DELETE "$api/$id"
+          done <<<"$old"

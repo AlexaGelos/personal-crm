@@ -1,0 +1,10 @@
+# Daily backup of the prod database; started by crm-backup.timer.
+# Installed once on the server by hand, see README ("Ежедневный бэкап")
+[Unit]
+Description=Daily backup of the CRM production database
+
+[Service]
+Type=oneshot
+User=deploy
+WorkingDirectory=/srv/personal-crm
+ExecStart=/usr/bin/bash /srv/personal-crm/backup.sh
