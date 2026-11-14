@@ -29,9 +29,9 @@ jobs:
     name: Deploy to prod
     # The scripts that are copied to the server come from the branch the workflow runs on
     if: github.ref == 'refs/heads/main'
-    environment:
-      name: prod
-      url: https://app.crmgelos.ru
+    # No "environment: prod": a manual run failed with
+    # "environment not found", and creating the environment is a repository setting. The prod history is
+    # in the list of runs of this workflow
     concurrency:
       group: deploy-prod
       cancel-in-progress: false
