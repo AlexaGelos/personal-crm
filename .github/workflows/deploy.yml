@@ -1,15 +1,12 @@
-# Push to main -> image ghcr.io/alexagelos/personal-crm:<commit SHA> -> deploy on the server.
+# Push to main -> image ghcr.io/alexagelos/personal-crm:<commit SHA> -> deploy to the staging
+# and to the prod on the server. The two deploys start together and do not depend on each other:
+# a broken staging does not stop the prod.
 # Everything that happens on the server is in deploy/deploy.sh
 name: Deploy
 
 on:
   push:
     branches: [main]
-
-# Deploys go one after another: a new push never interrupts a running deploy
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: false
 
 permissions: {}
 
@@ -47,8 +44,18 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: Deploy to the server
+    name: Deploy to ${{ matrix.environment }}
     needs: build
+    strategy:
+      # One environment failing does not cancel the other one
+      fail-fast: false
+      matrix:
+        environment: [staging, prod]
+    # Deploys to one environment go one after another: a new push never interrupts a running
+    # deploy. Different environments run in parallel (deploy.sh also holds a lock per environment)
+    concurrency:
+      group: deploy-${{ matrix.environment }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,10 +79,13 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
+      # rsync writes every file under a temporary name and renames it: a deploy of the other
+      # environment that is running right now keeps reading the old deploy.sh, not a half-written one
       - name: Copy deploy scripts to the server
-        run: scp -r deploy/* "$TARGET:$DEPLOY_DIR/"
+        run: rsync -rt deploy/ "$TARGET:$DEPLOY_DIR/"
 
       - name: Run deploy/deploy.sh on the server
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo "$GITHUB_ACTOR $REGISTRY_TOKEN" | ssh "$TARGET" bash "$DEPLOY_DIR/deploy.sh" "$GITHUB_SHA"
+          ENVIRONMENT: ${{ matrix.environment }}
+        run: echo "$GITHUB_ACTOR $REGISTRY_TOKEN" | ssh "$TARGET" bash "$DEPLOY_DIR/deploy.sh" "$ENVIRONMENT" "$GITHUB_SHA"
