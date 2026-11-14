@@ -326,11 +326,24 @@ OWNER_EMAIL=<почта владельца: ей достанутся конта
 Полезные команды на сервере (после `ssh crm`):
 
 - Состояние контейнеров: `docker ps` — у `prod-app-1` должно быть `healthy`
-- Логи приложения: `docker logs --tail 100 prod-app-1`
+- Логи приложения: `sudo journalctl CONTAINER_NAME=prod-app-1 -n 100` (подробнее — «Как читать логи» ниже)
 - История выкаток: `sudo cat /srv/personal-crm/deploy.log` (стенд: `deploy-staging.log`), версия, которая стоит сейчас: `docker inspect --format '{{.Config.Image}}' prod-app-1`
 - Ежедневный бэкап: `systemctl list-timers crm-backup.timer`, `sudo -u deploy tail /srv/personal-crm/backup.log`
 - Бэкапы базы: `sudo -u deploy ls -l /srv/personal-crm/backups`
-- Логи и память стенда: `docker logs --tail 100 staging-app-1`, `docker stats --no-stream`
+- Память контейнеров: `docker stats --no-stream`
+
+#### Как читать логи
+
+Логи всех контейнеров (приложение, база, разовый контейнер миграций) пишутся в журнал сервера (journald), а не в файлы контейнера. Поэтому они переживают выкатку и откат: после новой версии строки прошлых версий остаются на месте. Журнал сам ограничивает свой размер и удаляет самые старые строки, диск не заполнится. Сколько он занимает сейчас: `journalctl --disk-usage`.
+
+Контейнеры называются `prod-app-1`, `prod-db-1`, `staging-app-1`, `staging-db-1`; логи ищутся по этому имени (после `ssh crm`):
+
+- Последние 100 строк приложения прода: `sudo journalctl CONTAINER_NAME=prod-app-1 -n 100`; стенда — `CONTAINER_NAME=staging-app-1`; базы — `prod-db-1` и `staging-db-1`
+- Следить за новыми строками: добавьте `-f` (выйти — `Ctrl+C`)
+- За период: добавьте `--since "1 hour ago"` или `--since "2026-11-14 12:00"`. Время в журнале — по часам сервера
+- Найти ошибки: добавьте `| grep -i error`
+
+`docker logs prod-app-1` тоже работает, но показывает только текущий контейнер: после выкатки он новый, и прошлых версий там не будет. Для истории всегда берите `journalctl`.
 
 ### Тест-стенд
 
