@@ -1,8 +1,8 @@
 # Push to main -> image ghcr.io/alexagelos/personal-crm:<commit SHA> -> deploy to the staging
-# and to the prod on the server. The two deploys start together and do not depend on each other:
-# a broken staging does not stop the prod.
+# on the server. The prod is NOT deployed here: the owner starts the workflow "Deploy prod"
+# (deploy-prod.yml) by hand, and it takes a version that went green on the staging.
 # Everything that happens on the server is in deploy/deploy.sh
-name: Deploy
+name: Deploy staging
 
 on:
   push:
@@ -44,17 +44,17 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    name: Deploy to ${{ matrix.environment }}
+    name: Deploy to staging
     needs: build
-    strategy:
-      # One environment failing does not cancel the other one
-      fail-fast: false
-      matrix:
-        environment: [staging, prod]
-    # Deploys to one environment go one after another: a new push never interrupts a running
-    # deploy. Different environments run in parallel (deploy.sh also holds a lock per environment)
+    # GitHub keeps the history of the deploys to this environment (Deployments). "Deploy prod"
+    # reads it: only a version with a successful deploy here can go to the prod
+    environment:
+      name: staging
+      url: https://test-app.crmgelos.ru
+    # Deploys go one after another: a new push never interrupts a running deploy
+    # (deploy.sh also holds a lock)
     concurrency:
-      group: deploy-${{ matrix.environment }}
+      group: deploy-staging
       cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
@@ -79,13 +79,12 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
-      # rsync writes every file under a temporary name and renames it: a deploy of the other
-      # environment that is running right now keeps reading the old deploy.sh, not a half-written one
+      # rsync writes every file under a temporary name and renames it: a deploy of the prod
+      # that is running right now keeps reading the old deploy.sh, not a half-written one
       - name: Copy deploy scripts to the server
         run: rsync -rt deploy/ "$TARGET:$DEPLOY_DIR/"
 
       - name: Run deploy/deploy.sh on the server
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ENVIRONMENT: ${{ matrix.environment }}
-        run: echo "$GITHUB_ACTOR $REGISTRY_TOKEN" | ssh "$TARGET" bash "$DEPLOY_DIR/deploy.sh" "$ENVIRONMENT" "$GITHUB_SHA"
+        run: echo "$GITHUB_ACTOR $REGISTRY_TOKEN" | ssh "$TARGET" bash "$DEPLOY_DIR/deploy.sh" staging "$GITHUB_SHA"

@@ -4,7 +4,8 @@
 #   ssh crm
 #   sudo -u deploy bash /srv/personal-crm/refresh-staging-db.sh [backup file]
 #
-# Without an argument it takes the newest backup that a deploy took in backups/.
+# Without an argument it takes the newest prod backup in backups/ (taken by a deploy or by the
+# daily timer).
 # Shows what will be replaced and waits for "yes" -> stops the staging app -> drops and
 # recreates the staging database -> loads the backup -> applies the migrations of the staging
 # app version (the backup may be older than the app) -> starts the app -> smoke /health.
@@ -26,8 +27,9 @@ fi
 if [[ $# -eq 1 ]]; then
   backup_file=$1
 else
-  # The names start with the time, so the last one in the order is the newest
-  backup_file=$(printf '%s\n' "$BACKUP_DIR"/before-deploy-*.dump | sort | tail -1)
+  # The newest by the time the file was written. ls fails if one of the two kinds is missing,
+  # that is fine: an empty result is reported below
+  backup_file=$({ ls -1t "$BACKUP_DIR"/before-deploy-*.dump "$BACKUP_DIR"/daily-*.dump 2>/dev/null | head -1; } || true)
 fi
 if [[ ! -f $backup_file || ! -r $backup_file ]]; then
   echo "Cannot read the backup file: $backup_file. Nothing was changed" >&2

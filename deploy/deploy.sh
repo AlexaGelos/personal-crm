@@ -4,8 +4,9 @@
 #           -> new app container -> smoke /health -> cleanup of old images and backups
 # Staging:  the same, but without the backup and the cleanup
 #
-# GitHub Actions copies this folder to the server and runs the script after every push to main,
-# once for each environment. By hand on the server (e.g. to roll back to the previous version):
+# GitHub Actions copies this folder to the server and runs the script: for the staging after
+# every push to main (workflow "Deploy staging"), for the prod when the owner starts the
+# workflow "Deploy prod". By hand on the server (e.g. to roll back to the previous version):
 #   sudo -u deploy bash /srv/personal-crm/deploy.sh <prod|staging> <full commit SHA>
 #
 # Any failed step stops the deploy with an error. Nothing is rolled back automatically.
@@ -15,7 +16,8 @@ SCRIPT=$(readlink -f "$0")
 cd "$(dirname "$SCRIPT")"
 source ./lib.sh
 
-readonly BACKUPS_TO_KEEP=30
+readonly BACKUPS_TO_KEEP=7
+readonly IMAGE_MAX_AGE='2 weeks ago'
 
 environment=${1:-}
 sha=${2:-}
@@ -80,7 +82,7 @@ log "Smoke check $HEALTH_URL"
 if ! app_is_healthy; then
   log "FAILED: smoke, $HEALTH_URL does not answer 200. $sha is running but broken"
   compose logs --tail 50 app || true
-  previous_sha=$(deployed_versions | grep -vxF "$sha" | head -1 || true)
+  previous_sha=$(previous_version)
   if [[ -n $previous_sha ]]; then
     echo "To roll back by hand: ssh crm, then: sudo -u deploy bash $SCRIPT $ENVIRONMENT $previous_sha"
   fi
@@ -92,22 +94,27 @@ log "OK: $sha is live"
 # The cleanup below belongs to the prod deploy: the staging never removes anything
 [[ $ENVIRONMENT == prod ]] || exit 0
 
-# 6. Keep on disk the images of the last two successfully deployed versions of the prod (the
-# current one and the previous one to roll back to) and of the staging. An image that a
-# container uses is never removed. While a staging deploy is running its new image may be
-# pulled but not started yet, so the cleanup waits for the next time
+# 6. Remove the images that were built more than 2 weeks ago, except the last two successfully
+# deployed versions of the prod (the current one and the previous one to roll back to) and the
+# version that runs on the staging now. An image that a container uses is never removed. While
+# a staging deploy is running its new image may be pulled but not started yet, so the cleanup
+# waits for the next time
 if staging_is_busy; then
   echo "A staging deploy is running, the cleanup of old images is skipped this time"
 else
-  keep=$({ deployed_versions "$PROD_LOG" | head -2; deployed_versions "$STAGING_LOG" | head -2; } || true)
+  staging_image=$(staging_app_image)
+  keep=$({ deployed_versions "$PROD_LOG" | head -2; echo "${staging_image##*:}"; } || true)
+  oldest_to_keep=$(date -d "$IMAGE_MAX_AGE" +%s)
   docker image ls "$IMAGE_REPO" --format '{{.Tag}}' | while read -r tag; do
-    if ! grep -qxF "$tag" <<<"$keep"; then
-      docker image rm "$IMAGE_REPO:$tag" >/dev/null || echo "Could not remove $IMAGE_REPO:$tag"
-    fi
+    grep -qxF "$tag" <<<"$keep" && continue
+    built=$(docker image inspect --format '{{.Created}}' "$IMAGE_REPO:$tag") || continue
+    built_at=$(date -d "$built" +%s) || continue
+    (( built_at < oldest_to_keep )) || continue
+    docker image rm "$IMAGE_REPO:$tag" >/dev/null || echo "Could not remove $IMAGE_REPO:$tag"
   done
 fi
 
-# 7. Keep on disk only the latest backups taken by deploys. The copies that restore.sh
-# makes are not touched: they are rare and removed only by hand
-printf '%s\n' "$BACKUP_DIR"/before-deploy-*.dump | head -n -"$BACKUPS_TO_KEEP" |
-  xargs -r -d '\n' rm -f -- || echo "Could not remove old backups"
+# 7. Keep on disk only the 7 latest backups taken by deploys. The daily backups have their own 7
+# (backup.sh), and the copies that restore.sh makes are not touched: they are rare and
+# removed only by hand
+prune_backups before-deploy "$BACKUPS_TO_KEEP"
