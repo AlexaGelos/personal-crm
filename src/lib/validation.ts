@@ -2,6 +2,11 @@ import { z } from "zod";
 
 import type { ContactFrequency } from "@/db/schema";
 
+// By default zod tries Function("") to see whether it may build faster parsers with eval. The
+// Content Security Policy (next.config.ts) forbids eval, so the browser would log a violation
+// on every page that loads this file. With jitless zod does not try and uses its plain parsers
+z.config({ jitless: true });
+
 // Frequency switch values in the order of its buttons; "none" is stored as NULL
 export const frequencyChoices = ["none", "week", "month", "quarter", "year"] as const;
 
