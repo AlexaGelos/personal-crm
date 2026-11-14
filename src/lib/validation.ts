@@ -14,6 +14,10 @@ export type ContactFields = {
   howWeMet: string;
   phone: string;
   email: string;
+  // The three parts of the birth date as typed: day, month number from the list, year
+  birthDay: string;
+  birthMonth: string;
+  birthYear: string;
 };
 
 // The form also holds the checked groups and the names typed into "Новая группа"
@@ -24,8 +28,16 @@ export type ContactFormValues = ContactFields & {
 
 export type ContactFormState = {
   values?: ContactFormValues;
-  // newGroupNames: a typed name the browser should have refused (e.g. over 50 characters)
-  errors?: Partial<Record<keyof ContactFields | "newGroupNames", string[]>>;
+  // newGroupNames: a typed name the browser should have refused (e.g. over 50 characters).
+  // birthDate: one error for the whole date, shown under its three parts
+  errors?: Partial<
+    Record<
+      | Exclude<keyof ContactFields, "birthDay" | "birthMonth" | "birthYear">
+      | "birthDate"
+      | "newGroupNames",
+      string[]
+    >
+  >;
   message?: string;
 };
 
@@ -62,6 +74,9 @@ export const emptyContactFields: ContactFormValues = {
   howWeMet: "",
   phone: "",
   email: "",
+  birthDay: "",
+  birthMonth: "",
+  birthYear: "",
   groupIds: [],
   newGroupNames: [],
 };
@@ -88,6 +103,61 @@ export const contactSchema = z.object({
     "Проверьте адрес почты, например: name@example.com",
   ),
 });
+
+// Birth date as it is stored: day and month always, the year when it is known; null - not set
+export type BirthDate = { day: number; month: number; year: number | null };
+
+export const BIRTH_DATE_INCOMPLETE = "Укажите день и месяц";
+export const BIRTH_DATE_IMPOSSIBLE = "Такой даты нет";
+export const BIRTH_YEAR_OUT_OF_RANGE = "Год — от 1900 до текущего";
+
+export const FIRST_BIRTH_YEAR = 1900;
+
+const isLeapYear = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+// February has 29 days when the year is unknown: a person born on February 29 is still born
+function daysInMonth(month: number, year: number | null) {
+  if (month === 2) return year === null || isLeapYear(year) ? 29 : 28;
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+// The three raw parts of the form -> a date, null for empty fields, or one of three messages.
+// Used by the add and edit forms and by a request that goes around them alike
+export const birthDateSchema = z
+  .object({ birthDay: z.string(), birthMonth: z.string(), birthYear: z.string() })
+  .transform((raw, ctx): BirthDate | null => {
+    const [day, month, year] = [raw.birthDay, raw.birthMonth, raw.birthYear].map((part) =>
+      part.trim(),
+    );
+    const fail = (message: string) => {
+      ctx.addIssue({ code: "custom", message });
+      return z.NEVER;
+    };
+
+    if (!day && !month && !year) return null;
+    if (!day || !month) return fail(BIRTH_DATE_INCOMPLETE);
+
+    // Only digits: no signs, no decimals, no spaces inside
+    if (!/^\d+$/.test(day) || !/^\d+$/.test(month) || (year && !/^\d+$/.test(year))) {
+      return fail(BIRTH_DATE_IMPOSSIBLE);
+    }
+    const dayNumber = Number(day);
+    const monthNumber = Number(month);
+    const yearNumber = year ? Number(year) : null;
+
+    if (monthNumber < 1 || monthNumber > 12 || dayNumber < 1) return fail(BIRTH_DATE_IMPOSSIBLE);
+    if (dayNumber > daysInMonth(monthNumber, null)) return fail(BIRTH_DATE_IMPOSSIBLE);
+
+    if (yearNumber !== null) {
+      if (yearNumber < FIRST_BIRTH_YEAR || yearNumber > new Date().getFullYear()) {
+        return fail(BIRTH_YEAR_OUT_OF_RANGE);
+      }
+      // February 29 of a year that is not a leap one
+      if (dayNumber > daysInMonth(monthNumber, yearNumber)) return fail(BIRTH_DATE_IMPOSSIBLE);
+    }
+
+    return { day: dayNumber, month: monthNumber, year: yearNumber };
+  });
 
 export const noteSchema = z
   .string()

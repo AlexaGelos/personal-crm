@@ -63,3 +63,45 @@ export const frequencyLabels: Record<FrequencyChoice, string> = {
 export function formatOverdue(days: number) {
   return `просрочено на ${pluralize(days, ["день", "дня", "дней"])}`;
 }
+
+// How soon the birthday is: 0 -> "Сегодня", 1 -> "Завтра", 4 -> "Через 4 дня"
+export function formatBirthdayIn(daysUntil: number) {
+  if (daysUntil === 0) return "Сегодня";
+  if (daysUntil === 1) return "Завтра";
+  return `Через ${pluralize(daysUntil, ["день", "дня", "дней"])}`;
+}
+
+// Day and month always, the year when it is known: "18 ноября" / "18 ноября 1990 г.".
+// UTC and noon keep the day whatever the zone is. A date without a year is written on a leap
+// year (2000), so that February 29 does not turn into March 1
+const birthDateFormat = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
+const birthDateWithYearFormat = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// The names for the month list of the form, in the case the date is written in: "ноября"
+export const birthMonthNames = Array.from(
+  { length: 12 },
+  (_, index) =>
+    birthDateFormat
+      .formatToParts(new Date(Date.UTC(2000, index, 1, 12)))
+      .find((part) => part.type === "month")?.value ?? "",
+);
+
+export function formatBirthDate(day: number, month: number, year: number | null) {
+  const moment = new Date(Date.UTC(year ?? 2000, month - 1, day, 12));
+  return (year === null ? birthDateFormat : birthDateWithYearFormat).format(moment);
+}
+
+// 36 -> "исполняется 36"
+export function formatTurns(age: number) {
+  return `исполняется ${age}`;
+}

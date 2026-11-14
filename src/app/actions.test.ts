@@ -421,3 +421,189 @@ describe("actions on the data of another user", () => {
     expect(own[0].id).not.toBe(family.id);
   });
 });
+
+// The birth date arrives as three raw strings, the same for the add form, the edit form and a
+// request that goes around them
+function birthForm(name: string, day: string, month: string, year = "") {
+  const formData = contactForm(name);
+  formData.set("birthDay", day);
+  formData.set("birthMonth", month);
+  formData.set("birthYear", year);
+  return formData;
+}
+
+async function birthOf(contactId: number) {
+  const [row] = await db.select().from(contacts).where(eq(contacts.id, contactId));
+  return [row.birthDay, row.birthMonth, row.birthYear];
+}
+
+describe("the birth date in createContact", () => {
+  it("saves a full date", async () => {
+    await createContact({}, birthForm("Борис", "18", "11", "1990"));
+
+    const [created] = await db.select().from(contacts);
+    expect(await birthOf(created.id)).toEqual([18, 11, 1990]);
+  });
+
+  it("saves a date without a year", async () => {
+    await createContact({}, birthForm("Вера", "3", "3"));
+
+    const [created] = await db.select().from(contacts);
+    expect(await birthOf(created.id)).toEqual([3, 3, null]);
+  });
+
+  it("saves no date when the fields are empty or not in the request at all", async () => {
+    await createContact({}, birthForm("Анна", "", "", ""));
+    await createContact({}, contactForm("Борис"));
+
+    for (const contact of await db.select().from(contacts)) {
+      expect(await birthOf(contact.id)).toEqual([null, null, null]);
+    }
+    expect(await db.$count(contacts)).toBe(2);
+  });
+
+  it("saves February 29 without a year and in a leap year", async () => {
+    await createContact({}, birthForm("Анна", "29", "2"));
+    await createContact({}, birthForm("Борис", "29", "2", "2000"));
+
+    expect(await db.$count(contacts)).toBe(2);
+  });
+
+  it("does not save April 31 and brings back what was typed", async () => {
+    const result = await createContact({}, birthForm("Борис", "31", "4", "1990"));
+
+    expect(result.errors?.birthDate).toEqual(["Такой даты нет"]);
+    expect(result.values).toMatchObject({
+      name: "Борис",
+      birthDay: "31",
+      birthMonth: "4",
+      birthYear: "1990",
+    });
+    expect(await db.$count(contacts)).toBe(0);
+  });
+
+  it("does not save a day without a month", async () => {
+    const result = await createContact({}, birthForm("Борис", "18", ""));
+
+    expect(result.errors?.birthDate).toEqual(["Укажите день и месяц"]);
+    expect(await db.$count(contacts)).toBe(0);
+  });
+
+  it("does not save a year without a day and a month", async () => {
+    const result = await createContact({}, birthForm("Борис", "", "", "1990"));
+
+    expect(result.errors?.birthDate).toEqual(["Укажите день и месяц"]);
+    expect(await db.$count(contacts)).toBe(0);
+  });
+
+  it("refuses February 29 of a year that is not a leap one, and a year out of range", async () => {
+    expect(
+      (await createContact({}, birthForm("Борис", "29", "2", "2001"))).errors?.birthDate,
+    ).toEqual(["Такой даты нет"]);
+    expect(
+      (await createContact({}, birthForm("Борис", "18", "11", "1899"))).errors?.birthDate,
+    ).toEqual(["Год — от 1900 до текущего"]);
+    expect(await db.$count(contacts)).toBe(0);
+  });
+
+  it("shows the other errors of the form together with the date error", async () => {
+    const result = await createContact({}, birthForm("", "31", "4"));
+
+    expect(result.errors?.name).toEqual(["Укажите имя"]);
+    expect(result.errors?.birthDate).toEqual(["Такой даты нет"]);
+  });
+});
+
+describe("the birth date in updateContact", () => {
+  it("changes the date", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", {
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    await updateContact(boris.id, {}, birthForm("Борис", "19", "11", "1990"));
+
+    expect(await birthOf(boris.id)).toEqual([19, 11, 1990]);
+  });
+
+  it("sets a date on a contact that had none", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис");
+
+    await updateContact(boris.id, {}, birthForm("Борис", "18", "11"));
+
+    expect(await birthOf(boris.id)).toEqual([18, 11, null]);
+  });
+
+  it("clears the date when all three fields are emptied", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", {
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    await updateContact(boris.id, {}, birthForm("Борис", "", "", ""));
+
+    expect(await birthOf(boris.id)).toEqual([null, null, null]);
+  });
+
+  it("clears only the year when only the year is emptied", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", {
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    await updateContact(boris.id, {}, birthForm("Борис", "18", "11", ""));
+
+    expect(await birthOf(boris.id)).toEqual([18, 11, null]);
+  });
+
+  it("keeps the date when the form is saved with the same values", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", {
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    await updateContact(boris.id, {}, birthForm("Борис Петров", "18", "11", "1990"));
+
+    expect(await birthOf(boris.id)).toEqual([18, 11, 1990]);
+    expect((await getContact(TEST_USER_ID, boris.id))?.name).toBe("Борис Петров");
+  });
+
+  it("changes nothing and brings back what was typed when the date is wrong", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", {
+      birthDay: 18,
+      birthMonth: 11,
+      birthYear: 1990,
+    });
+
+    const result = await updateContact(boris.id, {}, birthForm("Новое имя", "31", "4", "1990"));
+
+    expect(result.errors?.birthDate).toEqual(["Такой даты нет"]);
+    expect(result.values).toMatchObject({ name: "Новое имя", birthDay: "31", birthMonth: "4" });
+    expect(await birthOf(boris.id)).toEqual([18, 11, 1990]);
+    expect((await getContact(TEST_USER_ID, boris.id))?.name).toBe("Борис");
+  });
+
+  it("changes nothing for a day without a month", async () => {
+    const boris = await addContact(TEST_USER_ID, "Борис", { birthDay: 18, birthMonth: 11 });
+
+    const result = await updateContact(boris.id, {}, birthForm("Борис", "18", ""));
+
+    expect(result.errors?.birthDate).toEqual(["Укажите день и месяц"]);
+    expect(await birthOf(boris.id)).toEqual([18, 11, null]);
+  });
+
+  it("does not set a date on a contact of another user", async () => {
+    const a = await addUser("a@example.com");
+    const anna = await addContact(a.id, "Анна");
+    const before = await snapshot();
+
+    const result = await updateContact(anna.id, {}, birthForm("Анна", "18", "11", "1990"));
+
+    expect(result.message).toBe(CONTACT_GONE);
+    expect(await snapshot()).toEqual(before);
+  });
+});
